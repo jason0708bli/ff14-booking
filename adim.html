@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.6</title>
+    <title>FF14 旗艦管理後台 v15.8</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.6</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線 Google 雲端乙太網路...</div>
+    <h2>管理者控制台 v15.8</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在同步雲端乙太網路...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -42,20 +42,20 @@
 </div>
 
 <script>
-    // 1. 修正網址：必須使用 `${SHEET_ID}` 且補全 google 網域
-    const SHEET_ID = "1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY";
-    const READ_URL = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json`;
+    // 【終極修正：直接寫死完整網址，不使用變數拼接，避免解析錯誤】
+    const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    
+
     let allData = [];
 
     async function fetchData() {
         try {
             const res = await fetch(READ_URL);
             const text = await res.text();
-            // 解析 Gviz 的格式化 JSON
-            const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
-            const json = JSON.parse(jsonText);
+            // 解析 Google Gviz 回傳的格式 (去掉外層 callback)
+            const startIdx = text.indexOf("(") + 1;
+            const endIdx = text.lastIndexOf(")");
+            const json = JSON.parse(text.substring(startIdx, endIdx));
             
             allData = json.table.rows.map(r => ({
                 id: r.c[0]?.v || "",
@@ -74,8 +74,8 @@
             document.getElementById('conn-hint').style.color = "#2ecc71";
             render();
         } catch (e) { 
-            console.error("讀取失敗:", e);
-            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查網路或共用設定";
+            console.error("讀取錯誤:", e);
+            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查網路或試算表共用";
         }
     }
 
@@ -111,7 +111,6 @@
             action: "insert", 
             data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
         };
-        // 使用 POST 提交到 GAS
         fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
             alert("✅ 指令已送出"); 
             setTimeout(fetchData, 3000); 
@@ -119,13 +118,13 @@
     }
 
     function updateStatus(id, s) { 
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) })
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id: id, status: s }) })
         .then(() => setTimeout(fetchData, 2000)); 
     }
 
     function delRow(id) { 
         if(!confirm("確定刪除？")) return;
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id: id }) })
         .then(() => setTimeout(fetchData, 2000)); 
     }
 
