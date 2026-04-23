@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.10</title>
+    <title>FF14 旗艦管理後台 v15.11</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.10</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在同步雲端乙太網路...</div>
+    <h2>管理者控制台 v15.11</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線雲端資料中心...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -28,7 +28,7 @@
         <input type="time" id="opStart" value="18:00">
         <input type="time" id="opEnd" value="23:00">
     </div>
-    <button class="primary" onclick="addOp()">確認發布時段</button>
+    <button class="primary" onclick="addOp()">確認發布到看板</button>
 </div>
 
 <div class="box">
@@ -42,89 +42,98 @@
 </div>
 
 <script>
-    // 直接寫死 100% 正確的 Google 網址，不進行任何變數拼接
     const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    
-    let allData = [];
+    var allData = [];
 
     async function fetchData() {
         try {
-            // 加入快取消除機制
-            const response = await fetch(READ_URL + "&nocache=" + Date.now());
-            const text = await response.text();
+            const res = await fetch(READ_URL + "&t=" + Date.now());
+            const text = await res.text();
             
-            // 強制解析 Gviz 的 JSON 結構
-            const start = text.indexOf('{');
-            const end = text.lastIndexOf('}') + 1;
-            const json = JSON.parse(text.substring(start, end));
+            // 【核心修正】使用正規表達式精確抓取 JSON 內容
+            const jsonMatch = text.match(/\{.*\}/s);
+            if (!jsonMatch) throw new Error("無法解析回傳格式");
             
-            allData = json.table.rows.map(r => ({
-                id: r.c[0]?.v || "",
-                date: r.c[1]?.v || "",
-                start: r.c[2]?.f || r.c[2]?.v || "",
-                end: r.c[3]?.f || r.c[3]?.v || "",
-                game: r.c[4]?.v || "",
-                title: r.c[5]?.v || "",
-                names: r.c[6]?.v || "",
-                status: r.c[7]?.v || "",
-                type: r.c[8]?.v || "",
-                max: r.c[9]?.v || 0
-            }));
+            const json = JSON.parse(jsonMatch[0]);
+            
+            allData = json.table.rows.map(function(r) {
+                // 安全讀取 c[index].v
+                const getV = (idx) => (r.c && r.c[idx]) ? r.c[idx].v : "";
+                const getF = (idx) => (r.c && r.c[idx]) ? (r.c[idx].f || r.c[idx].v) : "";
+
+                return {
+                    id: getV(0),
+                    date: getV(1),
+                    start: getF(2),
+                    end: getF(3),
+                    game: getV(4),
+                    title: getV(5),
+                    names: getV(6),
+                    status: getV(7),
+                    type: getV(8),
+                    max: getV(9)
+                };
+            });
             
             document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
             document.getElementById('conn-hint').style.color = "#2ecc71";
             render();
         } catch (e) { 
-            console.error("錯誤發生在 fetchData:", e);
-            document.getElementById('conn-hint').innerText = "🔴 連線失敗：請檢查 GitHub 網路或試算表共用";
+            console.error("fetchData 錯誤:", e);
+            document.getElementById('conn-hint').innerText = "🔴 資料格式錯誤，請聯絡工程師";
         }
     }
 
     function render() {
-        const slots = allData.filter(i => i.type === 'slot');
-        const bks = allData.filter(i => i.type === 'booking');
+        const slots = allData.filter(function(i){ return i.type === 'slot'; });
+        const bks = allData.filter(function(i){ return i.type === 'booking'; });
 
-        document.getElementById('opList').innerHTML = slots.map(o => `
-            <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
-                <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
-            </div>`).join('') || "目前看板無時段";
+        document.getElementById('opList').innerHTML = slots.map(function(o){
+            return '<div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">' +
+                   '<span>📅 ' + o.date + ' | 🕒 ' + o.start + ' - ' + o.end + '</span>' +
+                   '<button onclick="delRow(\''+ o.id +'\')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>' +
+                   '</div>';
+        }).join('') || "目前看板無時段";
 
-        document.getElementById('bkList').innerHTML = bks.map(b => `
-            <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
-                <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
-                <strong>${b.game} - ${b.title}</strong><br>
-                <small>${b.date} | ${b.start}-${b.end}</small>
-                <div class="name-grid">
-                    ${b.names ? b.names.split(', ').map((n, i) => `<div class="name-tag">${i+1}. ${n}</div>`).join('') : '無名單'}
-                </div>
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
-                    <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>
-                </div>
-            </div>`).join('') || "目前無預約申請";
+        document.getElementById('bkList').innerHTML = bks.map(function(b){
+            const names = b.names ? String(b.names).split(', ') : [];
+            const nameHtml = names.map(function(n, i){ return '<div class="name-tag">' + (i+1) + '. ' + n + '</div>'; }).join('');
+            
+            return '<div class="item-card" style="border-left:5px solid ' + (b.status==='pending'?'#666':'var(--green)') + '">' +
+                   '<div class="status-badge" style="background:' + (b.status==='pending'?'#666':'var(--green)') + '">' + (b.status==='pending'?'待審核':'預約成功') + '</div><br>' +
+                   '<strong>' + b.game + ' - ' + b.title + '</strong><br>' +
+                   '<small>' + b.date + ' | ' + b.start + ' - ' + b.end + '</small>' +
+                   '<div class="name-grid">' + nameHtml + '</div>' +
+                   '<div style="margin-top:10px; display:flex; gap:10px;">' +
+                   (b.status === 'pending' ? '<button onclick="updateStatus(\''+ b.id +'\',\'success\')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>' : '') +
+                   '<button onclick="delRow(\''+ b.id +'\')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>' +
+                   '</div></div>';
+        }).join('') || "目前無預約申請";
     }
 
     async function addOp() {
         const d = document.getElementById('opDate').value; 
         if(!d) return alert("請選日期");
-        const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
-            alert("✅ 指令已發出"); 
+        const payload = { 
+            action: "insert", 
+            data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
+        };
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(function(){ 
+            alert("✅ 指令已送出"); 
             setTimeout(fetchData, 3000); 
         });
     }
 
     function updateStatus(id, s) { 
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) })
-        .then(() => setTimeout(fetchData, 2000)); 
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id:id, status:s }) })
+        .then(function(){ setTimeout(fetchData, 2000); }); 
     }
 
     function delRow(id) { 
         if(!confirm("確定刪除？")) return;
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
-        .then(() => setTimeout(fetchData, 2000)); 
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id:id }) })
+        .then(function(){ setTimeout(fetchData, 2000); }); 
     }
 
     fetchData();
