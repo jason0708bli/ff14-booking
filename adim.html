@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.11</title>
+    <title>FF14 旗艦管理後台 v15.12</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.11</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線雲端資料中心...</div>
+    <h2>管理者控制台 v15.12</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在接收雲端訊號...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -42,8 +42,8 @@
 </div>
 
 <script>
-    const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
+    var READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
+    var GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     var allData = [];
 
     async function fetchData() {
@@ -51,37 +51,30 @@
             const res = await fetch(READ_URL + "&t=" + Date.now());
             const text = await res.text();
             
-            // 【核心修正】使用正規表達式精確抓取 JSON 內容
-            const jsonMatch = text.match(/\{.*\}/s);
-            if (!jsonMatch) throw new Error("無法解析回傳格式");
-            
-            const json = JSON.parse(jsonMatch[0]);
+            // 【核心修正】精確過濾 Google 的非標準 JSON 前綴
+            const startIdx = text.indexOf('{');
+            const endIdx = text.lastIndexOf('}') + 1;
+            const jsonText = text.substring(startIdx, endIdx);
+            const json = JSON.parse(jsonText);
             
             allData = json.table.rows.map(function(r) {
-                // 安全讀取 c[index].v
-                const getV = (idx) => (r.c && r.c[idx]) ? r.c[idx].v : "";
-                const getF = (idx) => (r.c && r.c[idx]) ? (r.c[idx].f || r.c[idx].v) : "";
+                // 安全抓取函數
+                var v = function(i) { return (r.c && r.c[i]) ? r.c[i].v : ""; };
+                var f = function(i) { return (r.c && r.c[i]) ? (r.c[i].f || r.c[i].v) : ""; };
 
                 return {
-                    id: getV(0),
-                    date: getV(1),
-                    start: getF(2),
-                    end: getF(3),
-                    game: getV(4),
-                    title: getV(5),
-                    names: getV(6),
-                    status: getV(7),
-                    type: getV(8),
-                    max: getV(9)
+                    id: v(0), date: v(1), start: f(2), end: f(3),
+                    game: v(4), title: v(5), names: v(6),
+                    status: v(7), type: v(8), max: v(9)
                 };
             });
             
-            document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
+            document.getElementById('conn-hint').innerText = "🟢 雲端對接完成";
             document.getElementById('conn-hint').style.color = "#2ecc71";
             render();
         } catch (e) { 
-            console.error("fetchData 錯誤:", e);
-            document.getElementById('conn-hint').innerText = "🔴 資料格式錯誤，請聯絡工程師";
+            console.error("解析失敗:", e);
+            document.getElementById('conn-hint').innerText = "🔴 格式解析錯誤，請重整頁面";
         }
     }
 
@@ -97,8 +90,8 @@
         }).join('') || "目前看板無時段";
 
         document.getElementById('bkList').innerHTML = bks.map(function(b){
-            const names = b.names ? String(b.names).split(', ') : [];
-            const nameHtml = names.map(function(n, i){ return '<div class="name-tag">' + (i+1) + '. ' + n + '</div>'; }).join('');
+            const nameList = b.names ? String(b.names).split(', ') : [];
+            const nameHtml = nameList.map(function(n, i){ return '<div class="name-tag">' + (i+1) + '. ' + n + '</div>'; }).join('');
             
             return '<div class="item-card" style="border-left:5px solid ' + (b.status==='pending'?'#666':'var(--green)') + '">' +
                    '<div class="status-badge" style="background:' + (b.status==='pending'?'#666':'var(--green)') + '">' + (b.status==='pending'?'待審核':'預約成功') + '</div><br>' +
@@ -106,21 +99,18 @@
                    '<small>' + b.date + ' | ' + b.start + ' - ' + b.end + '</small>' +
                    '<div class="name-grid">' + nameHtml + '</div>' +
                    '<div style="margin-top:10px; display:flex; gap:10px;">' +
-                   (b.status === 'pending' ? '<button onclick="updateStatus(\''+ b.id +'\',\'success\')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>' : '') +
-                   '<button onclick="delRow(\''+ b.id +'\')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>' +
+                   (b.status === 'pending' ? '<button onclick="updateStatus(\''+ b.id +'\',\'success\')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">核准通過</button>' : '') +
+                   '<button onclick="delRow(\''+ b.id +'\')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除紀錄</button>' +
                    '</div></div>';
-        }).join('') || "目前無預約申請";
+        }).join('') || "目前無申請";
     }
 
     async function addOp() {
         const d = document.getElementById('opDate').value; 
         if(!d) return alert("請選日期");
-        const payload = { 
-            action: "insert", 
-            data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
-        };
+        const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
         fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(function(){ 
-            alert("✅ 指令已送出"); 
+            alert("✅ 指令已送出！請等待 3 秒資料寫入..."); 
             setTimeout(fetchData, 3000); 
         });
     }
