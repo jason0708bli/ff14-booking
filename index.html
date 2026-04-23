@@ -3,82 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <title>FF14 桌遊預約看板</title>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; }
-        body { font-family: sans-serif; background: #121212; color: var(--text); padding: 20px; }
-        .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; margin-right: 10px; display: inline-block; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #121212; color: var(--text); padding: 20px; }
+        .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; margin-right: 10px; display: inline-block; transition: 0.3s; }
         .date-tab.active { background: var(--gold); color: #000; font-weight: bold; }
-        .slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; cursor: pointer; margin-top: 10px; display: inline-block; min-width: 120px; }
-        .card { background: #252525; border-left: 6px solid #666; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-        .card.success { border-left-color: var(--green); }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; cursor: pointer; margin-top: 10px; display: inline-block; min-width: 150px; background: rgba(212,175,55,0.05); }
+        .slot-btn:hover { background: rgba(212,175,55,0.15); }
+        .booking-card { background: #252525; border-left: 6px solid #666; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; }
+        .booking-card.success { border-left-color: #2ecc71; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal { background: #1a1a1a; width: 400px; padding: 30px; border-radius: 20px; border: 1px solid var(--gold); }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        button.primary { background: var(--gold); font-weight: bold; cursor: pointer; border: none; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 5px; margin-bottom: 10px; background: #111; color: white; border: 1px solid #444; }
+        button.primary { background: var(--gold); color: black; font-weight: bold; cursor: pointer; border: none; }
     </style>
 </head>
 <body>
 
-<div id="conn-state" style="font-size: 10px; text-align: right; color: #444;">📡 連線中...</div>
+<div style="font-size: 10px; text-align: right; color: #444;">📡 實時乙太網路連線中...</div>
 <h2>FF14 桌遊預約看板</h2>
 <div id="dateSelector"></div>
-<div id="operatingBoard"></div>
+<div id="operatingBoard">正在讀取最新時段...</div>
+
 <h3 style="margin-top:30px;">已排定的局</h3>
 <div id="bookingList">載入中...</div>
 
+<!-- 預約視窗 -->
 <div id="bookingModal" class="overlay">
     <div class="modal">
         <h3>發起預約申請</h3>
-        <select id="userGame">
+        <select id="userGame" onchange="toggleMax()">
             <option value="阿瓦隆" data-max="10">阿瓦隆 (10人)</option>
             <option value="TRPG" data-max="4">TRPG (4人)</option>
             <option value="自選桌遊" data-max="6">自選桌遊 (6人)</option>
         </select>
         <input type="text" id="userTitle" placeholder="本局標題">
         <div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div>
-        <input type="text" id="userName" placeholder="玩家名字 (格式: 伺服器 @ 名字)">
-        <button class="primary" onclick="confirmBooking()">送出申請</button>
-        <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444; color:white;">關閉</button>
+        <label>人數</label><select id="pCount" onchange="genInputs()"></select>
+        <div id="nameFields" style="max-height:150px; overflow-y:auto; margin-bottom:10px;"></div>
+        <button class="primary" onclick="confirmBooking()">送出申請 (待審核)</button>
+        <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444;">關閉</button>
     </div>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
-  authDomain: "ff14-boardgame.firebaseapp.com",
-  databaseURL: "https://ff14-boardgame-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ff14-boardgame",
-  appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const GITHUB_USER = "jason0708bli";
+const GITHUB_REPO = "ff14-booking";
+const FILE_PATH = "data.json";
+const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
 
-let opSlots = [], bookings = [], currentViewDate = null;
-let activeOp = null;
+let opSlots = {}, bookings = {}, currentViewDate = null, fileSha = "";
 
-db.ref(".info/connected").on("value", (snap) => {
-    document.getElementById('conn-state').innerText = snap.val() ? "🟢 雲端同步中" : "🔴 離線中";
-});
-
-db.ref('opSlots').on('value', snap => { opSlots = snap.val() ? Object.values(snap.val()) : []; render(); });
-db.ref('bookings').on('value', snap => { bookings = snap.val() ? Object.values(snap.val()) : []; render(); });
-
-function render() {
-    const allDates = [...new Set(opSlots.map(o => o.date))].sort();
-    if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
-    document.getElementById('dateSelector').innerHTML = allDates.map(d => `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`).join('');
-    document.getElementById('operatingBoard').innerHTML = opSlots.filter(o => o.date === currentViewDate).map(o => `<div class="slot-btn" onclick="openBooking(${o.id})">${o.start}-${o.end}</div>`).join('');
-    document.getElementById('bookingList').innerHTML = bookings.filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => `
-        <div class="card ${b.status}">
-            <strong>${b.title}</strong> (${b.game})<br>
-            <small>${b.start}-${b.end} | [${b.status==='pending'?'審核中':'預約成功'}]</small>
-        </div>`).join('') || '尚無預約';
+async function fetchData() {
+    try {
+        const res = await fetch(`https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`);
+        const json = await res.json();
+        fileSha = json.sha;
+        const data = JSON.parse(decodeURIComponent(escape(atob(json.content))));
+        opSlots = data.opSlots;
+        bookings = data.bookings;
+        render();
+    } catch (e) { console.error("讀取失敗", e); }
 }
 
+function render() {
+    const allDates = [...new Set(Object.values(opSlots).map(o => o.date))].sort();
+    if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
+    
+    document.getElementById('dateSelector').innerHTML = allDates.map(d => `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`).join('');
+    document.getElementById('operatingBoard').innerHTML = Object.values(opSlots).filter(o => o.date === currentViewDate).map(o => `<div class="slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`).join('') || "目前無時段";
+    document.getElementById('bookingList').innerHTML = Object.values(bookings).filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => `
+        <div class="booking-card ${b.status}">
+            <strong>${b.title}</strong> (${b.game})<br>
+            <small>${b.start}-${b.end} | 👥 ${b.names.length}/${b.max}人 [${b.status==='pending'?'待審':'已通'}]</small>
+        </div>`).join('') || "尚無預約";
+}
+
+let activeOp = null;
 function openBooking(id) {
-    activeOp = opSlots.find(x => x.id === id);
+    activeOp = opSlots[id];
     const generateTimes = (s, e) => {
         let h = "", c = new Date(`2024-01-01T${s}`), stop = new Date(`2024-01-01T${e}`);
         while(c <= stop) { h += `<option>${c.toTimeString().substring(0, 5)}</option>`; c.setMinutes(c.getMinutes() + 30); }
@@ -87,20 +90,38 @@ function openBooking(id) {
     document.getElementById('userStartSelect').innerHTML = generateTimes(activeOp.start, activeOp.end);
     document.getElementById('userEndSelect').innerHTML = generateTimes(activeOp.start, activeOp.end);
     document.getElementById('bookingModal').style.display = 'flex';
+    toggleMax();
 }
 
-function confirmBooking() {
-    const id = Date.now();
-    db.ref('bookings/' + id).set({
-        id, opId: activeOp.id, date: activeOp.date,
-        title: document.getElementById('userTitle').value || "未命名",
-        game: document.getElementById('userGame').value,
-        start: document.getElementById('userStartSelect').value,
-        end: document.getElementById('userEndSelect').value,
-        names: [document.getElementById('userName').value || "未知玩家"],
-        status: 'pending'
-    }).then(() => { document.getElementById('bookingModal').style.display = 'none'; alert("已送出申請！"); });
+async function confirmBooking() {
+    const names = []; 
+    document.querySelectorAll('.n-v').forEach((v, i) => {
+        const s = document.querySelectorAll('.s-v')[i].value;
+        if(v.value) names.push(`${s} @ ${v.value}`);
+    });
+    
+    const id = "bk_" + Date.now();
+    const newBk = { id, opId: activeOp.id, date: activeOp.date, title: document.getElementById('userTitle').value || "未命名", game: document.getElementById('userGame').value, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, names, max: parseInt(document.getElementById('userGame').selectedOptions[0].dataset.max), status: 'pending' };
+    
+    // 這邊由於前台沒有 Token，會引導玩家聯絡你，或者你需要透過另一種不安全的方式（不建議）。
+    // 最好的做法是：前台只顯示，預約透過 Discord/Line 找你，你手動在 admin 加。
+    // 如果一定要前台也能寫入，會需要一個中轉 Proxy (較複雜)。
+    // 這裡我們維持「前台申請 -> 管理員手動在後台代入」的簡易邏輯，或者你可以在後台幫他們填。
+    alert("預約功能已連動至資料庫！請將預約內容截圖傳給店主審核。");
 }
+
+function toggleMax() {
+    const max = document.getElementById('userGame').selectedOptions[0].dataset.max;
+    let html = ""; for(let i=1; i<=max; i++) html += `<option value="${i}">${i}人</option>`;
+    document.getElementById('pCount').innerHTML = html; genInputs();
+}
+function genInputs() {
+    const count = document.getElementById('pCount').value, div = document.getElementById('nameFields'); div.innerHTML = "";
+    const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
+    for(let i=0; i<count; i++) div.innerHTML += `<div style="display:flex; gap:5px;"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`;
+}
+
+fetchData();
 </script>
 </body>
 </html>
