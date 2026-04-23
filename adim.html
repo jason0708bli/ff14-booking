@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FF14 核心管理後台</title>
+    <!-- 使用 8.10.1 穩定版本 SDK -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <style>
@@ -12,94 +13,106 @@
         input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; }
         button { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
         #conn-msg { font-weight: bold; margin-bottom: 15px; }
+        .list-item { background: #000; padding: 8px; border-radius: 6px; margin-top: 5px; display: flex; justify-content: space-between; font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2 style="color:var(--gold);">管理者面板 v12.3</h2>
-    <div id="conn-msg">🔄 正在嘗試連線至雲端...</div>
+    <h2 style="color:var(--gold);">管理者面板 v12.4</h2>
+    <div id="conn-msg">🔄 正在載入雲端金鑰...</div>
     
+    <label>發布日期</label>
     <input type="date" id="opDate">
     <div style="display:flex; gap:10px;">
         <input type="time" id="opStart" value="18:00">
         <input type="time" id="opEnd" value="23:00">
     </div>
-    <button onclick="addOp()">確認發布</button>
+    <button id="submitBtn" onclick="addOp()" disabled style="background:#555;">等待連線中...</button>
 </div>
 
 <div class="box">
-    <h3>目前時段清單</h3>
-    <div id="opList">檢查中...</div>
+    <h3>目前看板時段</h3>
+    <div id="opList">等待資料中...</div>
 </div>
 
 <div class="box">
-    <h3>預約審核</h3>
-    <div id="bkList">檢查中...</div>
+    <h3>預約審核中心</h3>
+    <div id="bkList">無預約</div>
 </div>
 
 <script>
+// 1. 填入你的專屬 Config
 const firebaseConfig = {
   apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
-  authDomain: "://firebaseapp.com",
-  databaseURL: "https://firebasedatabase.app",
+  authDomain: "ff14-boardgame.firebaseapp.com",
+  databaseURL: "https://ff14-boardgame-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ff14-boardgame",
-  appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
+  storageBucket: "ff14-boardgame.firebasestorage.app",
+  messagingSenderId: "1065149131631",
+  appId: "1:1065149131631:web:89281ad9cc8f76172c969a",
+  measurementId: "G-YKRV8DW5NQ"
 };
 
-// 初始化並強制指定 Database URL
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
+// 2. 啟動 Firebase
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const connMsg = document.getElementById('conn-msg');
+const submitBtn = document.getElementById('submitBtn');
 
-// 監測連線
+// 3. 檢查連線狀態
 db.ref(".info/connected").on("value", (snap) => {
     if (snap.val() === true) {
-        connMsg.innerText = "🟢 資料庫已連接 (雲端同步中)";
+        connMsg.innerText = "🟢 已成功連線至雲端資料庫";
         connMsg.style.color = "#2ecc71";
+        submitBtn.disabled = false;
+        submitBtn.style.background = "var(--gold)";
+        submitBtn.innerText = "確認發布時段";
     } else {
-        connMsg.innerText = "🔴 連接失敗：請檢查 Firebase 規則";
+        connMsg.innerText = "🔴 連線失敗：請檢查 Firebase Rules 規則";
         connMsg.style.color = "#e74c3c";
+        submitBtn.disabled = true;
+        submitBtn.style.background = "#555";
+        submitBtn.innerText = "連線中斷";
     }
 });
 
+// 4. 功能函式
 function addOp() {
     const d = document.getElementById('opDate').value;
     const s = document.getElementById('opStart').value;
     const e = document.getElementById('opEnd').value;
-    if(!d || !s || !e) return alert("請填寫完整");
+    if(!d) return alert("請選擇日期！");
 
     const id = Date.now();
     db.ref('opSlots/' + id).set({ id, date: d, start: s, end: e })
     .then(() => alert("✅ 發布成功！"))
-    .catch(err => alert("❌ 失敗：" + err.message));
+    .catch(err => alert("❌ 發布失敗：" + err.message));
 }
 
+// 5. 即時更新列表
 db.ref('opSlots').on('value', snap => {
     const data = snap.val();
     document.getElementById('opList').innerHTML = data ? Object.values(data).map(o => `
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+        <div class="list-item">
             <span>📅 ${o.date} (${o.start}-${o.end})</span>
-            <button onclick="db.ref('opSlots/${o.id}').remove()" style="width:auto; padding:2px 8px; background:#e74c3c; color:white; font-size:12px;">刪除</button>
+            <button onclick="db.ref('opSlots/${o.id}').remove()" style="width:auto; padding:2px 8px; background:#e74c3c; color:white; border:none; border-radius:4px;">刪除</button>
         </div>
-    `).join('') : "無資料";
+    `).join('') : "目前看板上沒有任何時段";
 });
 
 db.ref('bookings').on('value', snap => {
     const data = snap.val();
     document.getElementById('bkList').innerHTML = data ? Object.values(data).map(b => `
-        <div style="background:#000; padding:10px; border-radius:8px; margin-bottom:10px; text-align:left; border-left:4px solid ${b.status==='pending'?'#888':'#2ecc71'}">
-            <strong>${b.game}</strong> (${b.status})<br>
+        <div style="background:#000; padding:10px; border-radius:8px; margin-bottom:8px; text-align:left; border-left:4px solid ${b.status==='pending'?'#888':'#2ecc71'}">
+            <strong>${b.game}</strong> [${b.status==='pending'?'待審':'已通'}]<br>
             <small>${b.date} ${b.start}-${b.end}</small>
             <div style="margin-top:5px;">
-                ${b.status==='pending' ? `<button onclick="db.ref('bookings/${b.id}').update({status:'success'})" style="width:auto; padding:4px 8px; font-size:12px;">通過</button>` : ''}
-                <button onclick="db.ref('bookings/${b.id}').remove()" style="width:auto; padding:4px 8px; background:#444; font-size:12px;">刪除</button>
+                ${b.status==='pending' ? `<button onclick="db.ref('bookings/${b.id}').update({status:'success'})" style="width:auto; padding:4px 8px; font-size:12px; background:#2ecc71; border:none; border-radius:4px;">通過</button>` : ''}
+                <button onclick="db.ref('bookings/${b.id}').remove()" style="width:auto; padding:4px 8px; background:#444; font-size:12px; border:none; border-radius:4px; color:white; margin-left:5px;">刪除</button>
             </div>
         </div>
-    `).join('') : "無預約";
+    `).join('') : "目前無預約申請";
 });
 </script>
 </body>
