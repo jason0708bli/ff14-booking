@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.3</title>
+    <title>FF14 旗艦管理後台 v15.2</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.3</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在同步雲端乙太網路...</div>
+    <h2>管理者控制台 v15.2</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線至 Google 雲端...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -42,15 +42,18 @@
 </div>
 
 <script>
-    // 唯一變數定義
+    // 【強制修正】直接寫死網址，不使用變數拼接
     const READ_URL = "https://google.com";
     const GAS_URL = "https://google.com";
+
     let allData = [];
 
+    // 讀取資料函式
     async function fetchData() {
         try {
             const res = await fetch(READ_URL);
             const text = await res.text();
+            // 解析 Google Gviz 特有的 JSON 格式
             const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
             const json = JSON.parse(jsonText);
             
@@ -71,10 +74,12 @@
             document.getElementById('conn-hint').style.color = "#2ecc71";
             render();
         } catch (e) { 
-            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查網路或共用設定";
+            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查共用設定或網址";
+            console.error("讀取錯誤:", e);
         }
     }
 
+    // 渲染畫面
     function render() {
         const slots = allData.filter(i => i.type === 'slot');
         const bks = allData.filter(i => i.type === 'booking');
@@ -83,7 +88,7 @@
             <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
                 <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
-            </div>`).join('') || "目前無時段";
+            </div>`).join('') || "目前看板無時段";
 
         document.getElementById('bkList').innerHTML = bks.map(b => `
             <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
@@ -95,20 +100,32 @@
                 </div>
                 <div style="margin-top:10px; display:flex; gap:10px;">
                     ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
-                    <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>
+                    <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除預約</button>
                 </div>
-            </div>`).join('') || "目前無申請";
+            </div>`).join('') || "目前無預約申請";
     }
 
+    // 發布時段
     async function addOp() {
         const d = document.getElementById('opDate').value; 
         if(!d) return alert("請選日期");
+        
         const payload = { 
             action: "insert", 
-            data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
+            data: { 
+                id: "slot_" + Date.now(), 
+                date: d, 
+                start: document.getElementById('opStart').value, 
+                end: document.getElementById('opEnd').value, 
+                type: "slot", 
+                status: "active", 
+                game: "-", title: "-", names: "-", max: "-" 
+            } 
         };
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
-            alert("✅ 指令已送出"); 
+        
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .then(() => { 
+            alert("✅ 指令已發出，資料入庫約需 3~5 秒"); 
             setTimeout(fetchData, 3000); 
         });
     }
@@ -119,7 +136,7 @@
     }
 
     function delRow(id) { 
-        if(!confirm("確定刪除？")) return;
+        if(!confirm("確定要刪除這筆資料嗎？")) return;
         fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
         .then(() => setTimeout(fetchData, 2000)); 
     }
