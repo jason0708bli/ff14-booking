@@ -2,33 +2,28 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊預約看板 v15.7</title>
+    <title>FF14 桌遊預約看板 v15.9</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --orange: #e67e22; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #121212; color: var(--text); padding: 20px; margin: 0; }
-        /* 日期分頁 */
         .date-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; }
         .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; white-space: nowrap; transition: 0.3s; }
-        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        /* 時段格網 */
+        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
         .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .open-slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; background: rgba(212, 175, 55, 0.05); cursor: pointer; transition: 0.3s; }
         .open-slot-btn:hover { background: rgba(212, 175, 55, 0.15); transform: translateY(-3px); }
-        /* 預約卡片 */
         .booking-card { background: #252525; border-left: 6px solid #666; padding: 18px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; position: relative; animation: fadeIn 0.5s; }
         .booking-card.success { border-left-color: var(--green); }
-        .mode-badge { position: absolute; top: 10px; right: 10px; padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: #fff; }
         .progress-container { background: #111; border-radius: 10px; height: 6px; width: 100%; margin: 10px 0; border: 1px solid #333; }
         .progress-bar { height: 100%; background: var(--gold); transition: width 0.5s; }
-        /* 彈窗 */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal { background: #1a1a1a; width: 450px; padding: 25px; border-radius: 20px; border: 1px solid var(--gold); max-height: 90vh; overflow-y: auto; }
-        input, select, button { width: 100%; padding: 12px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
         button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
         .p-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .s-v { width: 110px !important; flex-shrink: 0; }
-        .join-btn { background: var(--green); color: white; width: auto; padding: 6px 15px; margin-top: 5px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .join-btn { background: var(--green); color: white; width: auto; padding: 6px 15px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -41,7 +36,6 @@
 <h3 style="margin-top:40px; border-bottom: 1px solid #333; padding-bottom: 10px;">預約即時動態</h3>
 <div id="bookingList">載入中...</div>
 
-<!-- 預約視窗 -->
 <div id="bookingModal" class="overlay">
     <div class="modal">
         <h3 style="color:var(--gold); margin-top:0;">發起預約申請</h3>
@@ -52,19 +46,14 @@
         </select>
         <input type="text" id="userTitle" placeholder="本局標題">
         <div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div>
-        <select id="userJoinMode">
-            <option value="true">🟢 開放併桌</option>
-            <option value="false">🔒 私人團</option>
-        </select>
-        <label style="font-size: 0.7em; color: #888;">起始人數</label>
-        <select id="pCount" onchange="genInputs()"></select>
+        <select id="userJoinMode"><option value="true">🟢 開放併桌</option><option value="false">🔒 私人團</option></select>
+        <label style="font-size: 0.7em; color: #888;">人數</label><select id="pCount" onchange="genInputs()"></select>
         <div id="nameFields"></div>
         <button id="submitBtn" class="primary" onclick="confirmBooking()">送出申請</button>
         <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444; border:none; color:white;">關閉</button>
     </div>
 </div>
 
-<!-- 併桌視窗 -->
 <div id="joinModal" class="overlay">
     <div class="modal">
         <h3>我要併桌加入</h3>
@@ -76,9 +65,8 @@
 </div>
 
 <script>
-    // 網址硬編碼修正
-    const SHEET_ID = "1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY";
-    const READ_URL = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json`;
+    // 【強制修正】前台網址同樣寫死，解決 ERR_NAME_NOT_RESOLVED
+    const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
 
@@ -96,14 +84,14 @@
             }));
             document.getElementById('conn-hint').innerText = "🟢 乙太網路已連線";
             render();
-        } catch (e) { console.error("讀取失敗"); }
+        } catch (e) { console.error("讀取失敗", e); }
     }
 
     function render() {
         const slots = allData.filter(i => i.type === 'slot');
         const bks = allData.filter(i => i.type === 'booking');
         const dates = [...new Set(slots.map(o => o.date))].sort();
-        if(!currentViewDate && dates.length > 0) currentViewDate = dates[0];
+        if(!currentViewDate && dates.length > 0) currentViewDate = dates;
 
         document.getElementById('dateSelector').innerHTML = dates.map(d => `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`).join('');
         document.getElementById('operatingBoard').innerHTML = slots.filter(o => o.date === currentViewDate).map(o => `<div class="open-slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`).join('') || "今日無開放";
@@ -115,8 +103,7 @@
             const percent = (currentCount / (b.max || 1)) * 100;
             return `
             <div class="booking-card ${b.status}">
-                <div class="mode-badge" style="background:${isPrivate ? 'var(--orange)' : 'var(--green)'}">${isPrivate ? '🔒私人' : '🟢併桌'}</div>
-                <span style="float:right; font-size:10px; margin-right:45px;">${b.status==='pending'?'[審核中]':'[✅已通過]'}</span>
+                <span style="float:right; font-size:10px;">${b.status==='pending'?'[審核中]':'[✅已通過]'}</span>
                 <strong>${b.title}</strong> (${b.game})
                 <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
                 <small>🕒 ${b.start}-${b.end} | 👥 ${currentCount}/${b.max}人</small><br>
