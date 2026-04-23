@@ -2,143 +2,145 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊管理旗艦後台</title>
-    <!-- 使用最高穩定性 SDK -->
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
+    <title>FF14 GitHub 管理後台</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; --blue: #3498db; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .section-box { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; }
+        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 90%; max-width: 600px; }
+        .section-box { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #444; }
         h2, h3 { color: var(--gold); border-left: 5px solid var(--gold); padding-left: 15px; }
-        
-        /* 連線狀態條 */
-        #conn-msg { text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
-        .conn-red { background: #c0392b; color: white; }
-        .conn-green { background: #27ae60; color: white; }
-
-        /* 元件樣式 */
-        input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
-        button.primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-        .btn-small { width: auto; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
-
-        /* 名單網格 */
-        .admin-member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #0a0a0a; padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid #333; }
-        .member-item { font-size: 0.85em; color: #ddd; border-bottom: 1px solid #222; padding: 4px 0; }
-        
-        .list-item { background: #222; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: white; margin-bottom: 5px; display: inline-block; }
+        input, select, button, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; border: none; font-weight: bold; cursor: pointer; }
+        .item-card { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; position: relative; }
+        #sync-status { text-align: center; font-size: 0.8em; margin-bottom: 10px; color: #888; }
+        .member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; background: #1a1a1a; padding: 8px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="conn-msg" class="conn-red">🔴 正在嘗試連線至雲端乙太網路...</div>
+    <h2>管理者雲端控制台</h2>
+    
+    <div class="section-box">
+        <h3>🔑 身份驗證</h3>
+        <input type="password" id="ghToken" placeholder="請貼上 GitHub Token (ghp_...)">
+        <button class="primary" onclick="loadData()">🔄 讀取雲端資料 (data.json)</button>
+        <div id="sync-status">目前狀態：尚未連線</div>
+    </div>
 
     <div class="section-box">
-        <h2>1. 開放營業時段</h2>
+        <h3>1. 發布營業時段</h3>
         <input type="date" id="opDate">
         <div style="display:flex; gap:10px;">
             <input type="time" id="opStart" value="18:00"> <span>至</span> <input type="time" id="opEnd" value="23:00">
         </div>
-        <button id="pubBtn" class="primary" onclick="addOp()" disabled>等待連線...</button>
+        <button class="primary" onclick="addOp()">確認發布到看板</button>
     </div>
 
     <div class="section-box">
-        <h3>2. 目前開放管理 (刪除時段)</h3>
-        <div id="opList">讀取中...</div>
+        <h3>2. 時段管理</h3>
+        <div id="opList">請先讀取資料</div>
     </div>
 
     <div class="section-box">
-        <h3>3. 預約審核中心 (詳細名單)</h3>
-        <div id="bkList">暫無資料</div>
-    </div>
-
-    <div class="section-box" style="text-align: center;">
-        <h3>💾 系統備份</h3>
-        <button onclick="exportData()" style="background:var(--blue); width:auto;">下載預約資料備份 (.json)</button>
+        <h3>3. 預約審核中心</h3>
+        <div id="bkList">請先讀取資料</div>
     </div>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
-  authDomain: "://firebaseapp.com",
-  databaseURL: "https://firebasedatabase.app",
-  projectId: "ff14-boardgame",
-  storageBucket: "ff14-boardgame.firebasestorage.app",
-  messagingSenderId: "1065149131631",
-  appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
-};
+const GITHUB_USER = "jason0708bli";
+const GITHUB_REPO = "ff14-booking";
+const FILE_PATH = "data.json";
 
-// 初始化
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+let currentData = { opSlots: {}, bookings: {} };
+let fileSha = ""; 
 
-// 監測連線狀態
-db.ref(".info/connected").on("value", (snap) => {
-    const msg = document.getElementById('conn-msg');
-    const btn = document.getElementById('pubBtn');
-    if (snap.val() === true) {
-        msg.innerText = "🟢 雲端乙太網路連線正常 (新加坡伺服器)";
-        msg.className = "conn-green";
-        btn.disabled = false;
-        btn.innerText = "確認發布到看板";
-    } else {
-        msg.innerText = "🔴 連線失敗：請檢查 Firebase 規則是否發佈";
-        msg.className = "conn-red";
-        btn.disabled = true;
+async function loadData() {
+    const token = document.getElementById('ghToken').value;
+    if(!token) return alert("請貼上 Token！");
+    
+    document.getElementById('sync-status').innerText = "⏳ 正在與 GitHub 通訊...";
+    try {
+        const res = await fetch(`https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?nocache=${Date.now()}`, {
+            headers: { "Authorization": `token ${token}` }
+        });
+        const json = await res.json();
+        if (res.status !== 200) throw new Error("Token 錯誤或檔案不存在");
+        
+        fileSha = json.sha;
+        currentData = JSON.parse(decodeURIComponent(escape(atob(json.content))));
+        render();
+        document.getElementById('sync-status').innerText = "✅ 連線成功：資料已同步";
+        document.getElementById('sync-status').style.color = "#2ecc71";
+    } catch (e) {
+        alert(e.message);
+        document.getElementById('sync-status').innerText = "❌ 連線失敗";
     }
-});
-
-// 新增時段
-function addOp() {
-    const d = document.getElementById('opDate').value, s = document.getElementById('opStart').value, e = document.getElementById('opEnd').value;
-    if(!d) return alert("請選日期");
-    const id = Date.now();
-    db.ref('opSlots/' + id).set({ id, date: d, start: s, end: e })
-    .then(() => alert("✅ 已發布！"));
 }
 
-// 讀取開放時段
-db.ref('opSlots').on('value', snap => {
-    const data = snap.val();
-    document.getElementById('opList').innerHTML = data ? Object.values(data).map(o => `
-        <div class="list-item">
+async function saveData() {
+    const token = document.getElementById('ghToken').value;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(currentData, null, 2))));
+    document.getElementById('sync-status').innerText = "⏳ 正在寫入 GitHub...";
+
+    try {
+        const res = await fetch(`https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            method: "PUT",
+            headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: "Update booking data",
+                content: content,
+                sha: fileSha
+            })
+        });
+        const json = await res.json();
+        fileSha = json.content.sha;
+        document.getElementById('sync-status').innerText = "✅ 雲端存檔完成！";
+        render();
+    } catch (e) {
+        alert("存檔失敗：" + e.message);
+    }
+}
+
+function addOp() {
+    const d = document.getElementById('opDate').value;
+    if(!d) return alert("請選日期");
+    const id = "slot_" + Date.now();
+    currentData.opSlots[id] = { id, date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value };
+    saveData();
+}
+
+function approveBk(id) {
+    currentData.bookings[id].status = 'success';
+    saveData();
+}
+
+function deleteBk(id) {
+    if(confirm("確定刪除？")) { delete currentData.bookings[id]; saveData(); }
+}
+
+function render() {
+    // 渲染時段
+    document.getElementById('opList').innerHTML = Object.values(currentData.opSlots).map(o => `
+        <div class="item-card">
             <span>📅 ${o.date} (${o.start}-${o.end})</span>
-            <button onclick="if(confirm('刪除將連帶刪除該時段所有預約！')){db.ref('opSlots/${o.id}').remove();}" style="background:var(--red); color:white; width:auto; padding:5px 10px;">刪除</button>
-        </div>`).join('') : "無時段";
-});
+            <button onclick="delete currentData.opSlots['${o.id}']; saveData();" style="width:auto; float:right; background:var(--red); padding:4px 8px;">刪除</button>
+        </div>`).join('') || "目前無開放時段";
 
-// 讀取預約名單 (詳細版)
-db.ref('bookings').on('value', snap => {
-    const data = snap.val();
-    document.getElementById('bkList').innerHTML = data ? Object.values(data).map(b => `
-        <div style="background:#252525; padding:15px; border-radius:10px; border-left:5px solid ${b.status==='pending'?'#888':'var(--green)'}; margin-bottom:15px;">
-            <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
-            <strong>${b.game} - ${b.title}</strong><br>
-            <small style="color:#aaa;">${b.date} | ${b.start}-${b.end}</small>
-            
-            <div class="admin-member-grid">
-                ${b.names ? b.names.map((n, i) => `<div class="member-item">${i+1}. ${n}</div>`).join('') : '無名單'}
+    // 渲染預約
+    document.getElementById('bkList').innerHTML = Object.values(currentData.bookings).map(b => `
+        <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#888':'var(--green)'}">
+            <strong>${b.game} - ${b.title}</strong> [${b.status==='pending'?'待審':'已通'}]<br>
+            <small>${b.date} | ${b.start}</small>
+            <div class="member-grid">
+                ${b.names.map((n, i) => `<div style="font-size:0.8em;">${i+1}. ${n}</div>`).join('')}
             </div>
-
-            <div style="margin-top:10px; display:flex; gap:10px;">
-                ${b.status === 'pending' ? `<button class="btn-small" style="background:var(--green); color:white;" onclick="db.ref('bookings/${b.id}').update({status:'success'})">通過</button>` : ''}
-                <button class="btn-small" style="background:var(--red); color:white;" onclick="if(confirm('確定刪除？')){db.ref('bookings/${b.id}').remove();}">刪除預約</button>
+            <div style="margin-top:10px;">
+                ${b.status==='pending' ? `<button onclick="approveBk('${b.id}')" style="width:auto; background:var(--green); color:white; padding:5px 12px;">通過</button>` : ''}
+                <button onclick="deleteBk('${b.id}')" style="width:auto; background:#444; color:white; padding:5px 12px; margin-left:5px;">刪除</button>
             </div>
-        </div>`).join('') : "目前無申請";
-});
-
-// 備份功能
-function exportData() {
-    db.ref().once('value', snap => {
-        const blob = new Blob([JSON.stringify(snap.val())], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `FF14_Backup_${new Date().toLocaleDateString()}.json`; a.click();
-    });
+        </div>`).join('') || "目前無預約申請";
 }
 </script>
 </body>
