@@ -2,52 +2,67 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 核心管理後台 - 強制連線版</title>
-    <!-- 使用穩定且完整的 SDK 連結 -->
+    <title>FF14 桌遊管理旗艦後台</title>
+    <!-- 使用最高穩定性 SDK -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #111; --card: #222; --text: #eee; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); text-align: center; padding: 20px; }
-        .box { background: #222; padding: 30px; border-radius: 15px; border: 1px solid var(--gold); max-width: 450px; margin: 0 auto 20px; }
-        input, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; }
-        button { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; font-size: 1.1em; }
-        button:disabled { background: #444; color: #888; cursor: not-allowed; }
-        #conn-msg { font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-        .red { background: #c0392b; color: white; }
-        .green { background: #27ae60; color: white; }
-        .list-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; --blue: #3498db; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section-box { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; }
+        h2, h3 { color: var(--gold); border-left: 5px solid var(--gold); padding-left: 15px; }
+        
+        /* 連線狀態條 */
+        #conn-msg { text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
+        .conn-red { background: #c0392b; color: white; }
+        .conn-green { background: #27ae60; color: white; }
+
+        /* 元件樣式 */
+        input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        button.primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .btn-small { width: auto; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
+
+        /* 名單網格 */
+        .admin-member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #0a0a0a; padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid #333; }
+        .member-item { font-size: 0.85em; color: #ddd; border-bottom: 1px solid #222; padding: 4px 0; }
+        
+        .list-item { background: #222; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: white; margin-bottom: 5px; display: inline-block; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2 style="color:var(--gold);">管理者工作台 v12.6</h2>
-    <div id="conn-msg" class="red">🔄 正在建立雲端隧道...</div>
-    
-    <div id="debug" style="font-size: 10px; color: #666; margin-bottom: 10px;">系統初始化中...</div>
+<div class="container">
+    <div id="conn-msg" class="conn-red">🔴 正在嘗試連線至雲端乙太網路...</div>
 
-    <label style="display:block; text-align:left; font-size:12px; margin-bottom:5px; color:#888;">發布日期</label>
-    <input type="date" id="opDate">
-    <div style="display:flex; gap:10px;">
-        <input type="time" id="opStart" value="18:00">
-        <input type="time" id="opEnd" value="23:00">
+    <div class="section-box">
+        <h2>1. 開放營業時段</h2>
+        <input type="date" id="opDate">
+        <div style="display:flex; gap:10px;">
+            <input type="time" id="opStart" value="18:00"> <span>至</span> <input type="time" id="opEnd" value="23:00">
+        </div>
+        <button id="pubBtn" class="primary" onclick="addOp()" disabled>等待連線...</button>
     </div>
-    <button id="sendBtn" onclick="addOp()" disabled>確認發布時段</button>
-</div>
 
-<div class="box">
-    <h3>目前看板時段</h3>
-    <div id="opList" style="font-size: 14px; color: #888;">等待連線中...</div>
-</div>
+    <div class="section-box">
+        <h3>2. 目前開放管理 (刪除時段)</h3>
+        <div id="opList">讀取中...</div>
+    </div>
 
-<div class="box">
-    <h3>預約審核</h3>
-    <div id="bkList" style="font-size: 14px; color: #888;">暫無預約</div>
+    <div class="section-box">
+        <h3>3. 預約審核中心 (詳細名單)</h3>
+        <div id="bkList">暫無資料</div>
+    </div>
+
+    <div class="section-box" style="text-align: center;">
+        <h3>💾 系統備份</h3>
+        <button onclick="exportData()" style="background:var(--blue); width:auto;">下載預約資料備份 (.json)</button>
+    </div>
 </div>
 
 <script>
-// 1. 你的專屬 Config (嚴格校對版)
 const firebaseConfig = {
   apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
   authDomain: "://firebaseapp.com",
@@ -58,68 +73,73 @@ const firebaseConfig = {
   appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
 };
 
-// 2. 初始化流程 (加入錯誤擷取)
-try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    var db = firebase.database();
-    document.getElementById('debug').innerText = "Firebase 已掛載，正在驗證權限...";
-} catch (e) {
-    document.getElementById('debug').innerText = "初始化報錯：" + e.message;
-}
+// 初始化
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// 3. 連線狀態即時監聽
+// 監測連線狀態
 db.ref(".info/connected").on("value", (snap) => {
     const msg = document.getElementById('conn-msg');
-    const btn = document.getElementById('sendBtn');
+    const btn = document.getElementById('pubBtn');
     if (snap.val() === true) {
-        msg.innerText = "🟢 已成功對接新加坡資料庫";
-        msg.className = "green";
+        msg.innerText = "🟢 雲端乙太網路連線正常 (新加坡伺服器)";
+        msg.className = "conn-green";
         btn.disabled = false;
-        document.getElementById('debug').innerText = "連線成功！讀寫權限已開放";
+        btn.innerText = "確認發布到看板";
     } else {
-        msg.innerText = "🔴 連線失敗：請檢查 GitHub 網路或 Firebase";
-        msg.className = "red";
+        msg.innerText = "🔴 連線失敗：請檢查 Firebase 規則是否發佈";
+        msg.className = "conn-red";
         btn.disabled = true;
     }
 });
 
-// 4. 發布功能
+// 新增時段
 function addOp() {
-    const d = document.getElementById('opDate').value;
-    const s = document.getElementById('opStart').value;
-    const e = document.getElementById('opEnd').value;
-    if(!d) return alert("請填寫日期");
-
+    const d = document.getElementById('opDate').value, s = document.getElementById('opStart').value, e = document.getElementById('opEnd').value;
+    if(!d) return alert("請選日期");
     const id = Date.now();
     db.ref('opSlots/' + id).set({ id, date: d, start: s, end: e })
-    .then(() => alert("✅ 雲端發布成功！"))
-    .catch(err => alert("❌ 寫入失敗，請確認規則是否設為 true：" + err.message));
+    .then(() => alert("✅ 已發布！"));
 }
 
-// 5. 即時列表渲染
+// 讀取開放時段
 db.ref('opSlots').on('value', snap => {
     const data = snap.val();
     document.getElementById('opList').innerHTML = data ? Object.values(data).map(o => `
         <div class="list-item">
             <span>📅 ${o.date} (${o.start}-${o.end})</span>
-            <button onclick="db.ref('opSlots/${o.id}').remove()" style="width:auto; padding:4px 8px; background:#e74c3c; color:white; font-size:12px; margin:0;">刪除</button>
-        </div>`).join('') : "目前無開放時段";
+            <button onclick="if(confirm('刪除將連帶刪除該時段所有預約！')){db.ref('opSlots/${o.id}').remove();}" style="background:var(--red); color:white; width:auto; padding:5px 10px;">刪除</button>
+        </div>`).join('') : "無時段";
 });
 
+// 讀取預約名單 (詳細版)
 db.ref('bookings').on('value', snap => {
     const data = snap.val();
     document.getElementById('bkList').innerHTML = data ? Object.values(data).map(b => `
-        <div class="list-item" style="border-left:4px solid ${b.status==='pending'?'#888':'#2ecc71'}; text-align:left; flex-direction:column; align-items:start;">
-            <div style="font-weight:bold;">${b.game} - ${b.status}</div>
-            <div style="font-size:11px;">${b.date} ${b.start}-${b.end}</div>
-            <div style="margin-top:5px;">
-                ${b.status==='pending' ? `<button onclick="db.ref('bookings/${b.id}').update({status:'success'})" style="width:auto; padding:2px 6px; background:green; color:white; font-size:11px;">通過</button>` : ''}
-                <button onclick="db.ref('bookings/${b.id}').remove()" style="width:auto; padding:2px 6px; background:#444; color:white; font-size:11px; margin-left:5px;">刪除</button>
+        <div style="background:#252525; padding:15px; border-radius:10px; border-left:5px solid ${b.status==='pending'?'#888':'var(--green)'}; margin-bottom:15px;">
+            <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
+            <strong>${b.game} - ${b.title}</strong><br>
+            <small style="color:#aaa;">${b.date} | ${b.start}-${b.end}</small>
+            
+            <div class="admin-member-grid">
+                ${b.names ? b.names.map((n, i) => `<div class="member-item">${i+1}. ${n}</div>`).join('') : '無名單'}
             </div>
-        </div>`).join('') : "目前無預約申請";
+
+            <div style="margin-top:10px; display:flex; gap:10px;">
+                ${b.status === 'pending' ? `<button class="btn-small" style="background:var(--green); color:white;" onclick="db.ref('bookings/${b.id}').update({status:'success'})">通過</button>` : ''}
+                <button class="btn-small" style="background:var(--red); color:white;" onclick="if(confirm('確定刪除？')){db.ref('bookings/${b.id}').remove();}">刪除預約</button>
+            </div>
+        </div>`).join('') : "目前無申請";
 });
+
+// 備份功能
+function exportData() {
+    db.ref().once('value', snap => {
+        const blob = new Blob([JSON.stringify(snap.val())], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `FF14_Backup_${new Date().toLocaleDateString()}.json`; a.click();
+    });
+}
 </script>
 </body>
 </html>
