@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>FF14 桌遊預約看板</title>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <style>
+        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: linear-gradient(-45deg, #0f0f0f, #1a1a1a, #0a0e14); background-size: 400% 400%; animation: bgFlow 15s infinite; color: var(--text); padding: 20px; overflow-x: hidden; }
+        @keyframes bgFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .date-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; white-space: nowrap; }
+        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; }
+        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .open-slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; background: rgba(212, 175, 55, 0.05); cursor: pointer; }
+        .booking-card { background: #252525; border-left: 6px solid #666; padding: 18px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; animation: fadeIn 0.5s; }
+        .booking-card.success { border-left-color: var(--green); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-content { background: #1a1a1a; width: 450px; padding: 30px; border-radius: 20px; border: 1px solid var(--gold); }
+        input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; margin-bottom: 10px; }
+        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<h2>桌遊預約看板</h2>
+<div id="dateSelector" class="date-selector"></div>
+<div id="operatingBoard" class="slot-grid"></div>
+<h3 style="margin-top:30px; border-bottom: 1px solid #333; padding-bottom: 10px;">預約動態</h3>
+<div id="bookingList"></div>
+
+<div id="bookingModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>發起預約申請</h2>
+        <select id="userGame" onchange="toggleMaxPlayers()">
+            <option value="阿瓦隆" data-max="10">阿瓦隆 (上限 10 人)</option>
+            <option value="TRPG" data-max="4">TRPG 劇本團 (上限 4 人)</option>
+            <option value="自選桌遊" data-max="6">自選桌遊 (上限 6 人)</option>
+        </select>
+        <input type="text" id="userTitle" placeholder="標題">
+        <div style="display:flex; gap:10px;"><select id="userStartSelect"></select><span>至</span><select id="userEndSelect"></select></div>
+        <label>人數</label><select id="pCount" onchange="genInputs()"></select>
+        <div id="nameFields" style="max-height:150px; overflow-y:auto; margin-bottom:10px;"></div>
+        <button class="primary" onclick="confirmBooking()">送出申請</button>
+        <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444;">取消</button>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
+  authDomain: "ff14-boardgame.firebaseapp.com",
+  databaseURL: "https://ff14-boardgame-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ff14-boardgame",
+  appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
+
+let opSlots = [], bookings = [], currentViewDate = null;
+
+db.ref('opSlots').on('value', snapshot => {
+    opSlots = Object.values(snapshot.val() || {});
+    render();
+});
+
+db.ref('bookings').on('value', snapshot => {
+    bookings = Object.values(snapshot.val() || {});
+    render();
+});
+
+function render() {
+    const allDates = [...new Set(opSlots.map(o => o.date))].sort();
+    if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
+
+    document.getElementById('dateSelector').innerHTML = allDates.map(d => `
+        <div class="date-tab ${currentViewDate === d ? 'active' : ''}" onclick="currentViewDate='${d}'; render();">${d}</div>
+    `).join('');
+
+    document.getElementById('operatingBoard').innerHTML = opSlots.filter(o => o.date === currentViewDate).map(o => `
+        <div class="open-slot-btn" onclick="openBooking(${o.id})">${o.start}-${o.end}</div>
+    `).join('');
+
+    document.getElementById('bookingList').innerHTML = bookings.filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => `
+        <div class="booking-card ${b.status}">
+            <span style="float:right; font-size:0.7em;">${b.status==='pending'?'待審核':'✅預約成功'}</span>
+            <strong>${b.title}</strong> (${b.game})<br>
+            <small>🕒 ${b.start}-${b.end}</small>
+            <div style="margin-top:8px;">${b.names.map(n => `<span style="background:#111; padding:2px 6px; font-size:0.75em; border-radius:4px; margin-right:4px;">${n}</span>`).join('')}</div>
+        </div>
+    `).join('') || '這天還沒有預約喔！';
+}
+
+function openBooking(id) {
+    const o = opSlots.find(x => x.id === id);
+    activeOp = o;
+    document.getElementById('userStartSelect').innerHTML = generateTimeOptions(o.start, o.end);
+    document.getElementById('userEndSelect').innerHTML = generateTimeOptions(o.start, o.end);
+    document.getElementById('bookingModal').style.display = 'flex';
+    toggleMaxPlayers();
+}
+
+function generateTimeOptions(s, e) {
+    let html = "", curr = new Date(`2024-01-01T${s}`), end = new Date(`2024-01-01T${e}`);
+    while (curr <= end) {
+        let t = curr.toTimeString().substring(0, 5);
+        html += `<option value="${t}">${t}</option>`;
+        curr.setMinutes(curr.getMinutes() + 30);
+    }
+    return html;
+}
+
+function confirmBooking() {
+    const names = [];
+    document.querySelectorAll('.b-p').forEach(g => {
+        const nv = g.querySelector('.n-v').value.trim();
+        if(nv) names.push(`${g.querySelector('.s-v').value} @ ${nv}`);
+    });
+    const id = Date.now();
+    const data = {
+        id, opId: activeOp.id, date: activeOp.date,
+        title: document.getElementById('userTitle').value || "未命名",
+        game: document.getElementById('userGame').value,
+        start: document.getElementById('userStartSelect').value,
+        end: document.getElementById('userEndSelect').value,
+        names, status: 'pending'
+    };
+    db.ref('bookings/' + id).set(data);
+    document.getElementById('bookingModal').style.display = 'none';
+    alert("申請已送出！");
+}
+
+function toggleMaxPlayers() {
+    const max = document.getElementById('userGame').selectedOptions[0].dataset.max;
+    let html = ""; for(let i=1; i<=max; i++) html += `<option value="${i}">${i} 人</option>`;
+    document.getElementById('pCount').innerHTML = html;
+    genInputs();
+}
+function genInputs() {
+    const count = document.getElementById('pCount').value, div = document.getElementById('nameFields'); div.innerHTML = "";
+    const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
+    for(let i=0; i<count; i++) div.innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;" class="b-p"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`;
+}
+</script>
+</body>
+</html>
