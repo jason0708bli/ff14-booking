@@ -2,128 +2,68 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊店管理後台</title>
-    <!-- 引入 Firebase SDK -->
+    <title>FF14 桌遊審核後台</title>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 90%; max-width: 800px; }
-        .section-box { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #444; }
-        h2 { color: var(--gold); border-left: 5px solid var(--gold); padding-left: 15px; }
-        input, select, button, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; border: none; font-weight: bold; cursor: pointer; }
-        .admin-member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #111; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .member-item { font-size: 0.85em; color: #ddd; border-bottom: 1px solid #222; padding: 2px 0; }
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: white; }
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 3000; }
-        .toast { background: #333; border-left: 5px solid var(--gold); padding: 15px; border-radius: 8px; margin-bottom: 10px; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; }
+        .section-box { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; }
+        button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; }
+        .admin-member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: #000; padding: 10px; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-<div id="toast-container"></div>
-
-<div class="container">
-    <h2>管理者後台面板</h2>
-    
+    <h2>FF14 桌遊管理者面板</h2>
     <div class="section-box">
-        <h3>1. 開放營業時段</h3>
+        <h3>1. 發布營業時段</h3>
         <input type="date" id="opDate">
-        <div style="display:flex; gap:10px;">
-            <input type="time" id="opStart" value="18:00"> 至 <input type="time" id="opEnd" value="23:00">
-        </div>
-        <button class="primary" onclick="addOperatingTime()">確認發布時段</button>
+        <div style="display:flex; gap:5px;"><input type="time" id="opStart" value="18:00"> 至 <input type="time" id="opEnd" value="23:00"></div>
+        <button class="primary" onclick="addOp()">確認發布</button>
     </div>
-
-    <div class="section-box">
-        <h3>2. 開放時段管理</h3>
-        <div id="adminOpList">載入中...</div>
-    </div>
-
-    <div class="section-box">
-        <h3>3. 待處理與預約審核</h3>
-        <div id="adminBookingList">載入中...</div>
-    </div>
-</div>
+    <div class="section-box"><h3>2. 營業時段管理</h3><div id="opList">載入中...</div></div>
+    <div class="section-box"><h3>3. 預約審核中心</h3><div id="bkList">載入中...</div></div>
 
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
-  authDomain: "ff14-boardgame.firebaseapp.com",
-  databaseURL: "https://ff14-boardgame-default-rtdb.asia-southeast1.firebasedatabase.app",
+  authDomain: "://firebaseapp.com",
+  databaseURL: "https://firebasedatabase.app",
   projectId: "ff14-boardgame",
+  storageBucket: "ff14-boardgame.firebasestorage.app",
+  messagingSenderId: "1065149131631",
   appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function showToast(msg) {
-    const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-    document.getElementById('toast-container').appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-}
-
-function addOperatingTime() {
+function addOp() {
     const d = document.getElementById('opDate').value, s = document.getElementById('opStart').value, e = document.getElementById('opEnd').value;
-    if(!d || !s || !e) return alert("請填寫完整");
     const id = Date.now();
     db.ref('opSlots/' + id).set({ id, date: d, start: s, end: e });
-    showToast("✅ 營業時段已發布");
 }
 
-function deleteOp(id) {
-    if(confirm("確定刪除此時段？將連帶刪除預約！")) {
-        db.ref('opSlots/' + id).remove();
-        db.ref('bookings').orderByChild('opId').equalTo(id).once('value', snapshot => {
-            snapshot.forEach(child => child.ref.remove());
-        });
-    }
-}
-
-function approveBooking(id) {
-    db.ref('bookings/' + id).update({ status: 'success' });
-    showToast("✅ 預約已核准");
-}
-
-function rejectBooking(id) {
-    const reason = prompt("請輸入駁回原因：", "時段已被佔用");
-    if (reason) {
-        db.ref('bookings/' + id).update({ status: 'fail', reason: reason });
-        showToast("❌ 預約已駁回");
-    }
-}
-
-// 監聽雲端資料更新
-db.ref('opSlots').on('value', snapshot => {
-    const data = snapshot.val() || {};
-    document.getElementById('adminOpList').innerHTML = Object.values(data).map(o => `
-        <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between;">
+db.ref('opSlots').on('value', snap => {
+    const data = snap.val() || {};
+    document.getElementById('opList').innerHTML = Object.values(data).map(o => `
+        <div style="margin-bottom:8px; border-bottom:1px solid #333; padding-bottom:5px; display:flex; justify-content:space-between;">
             <span>📅 ${o.date} (${o.start}-${o.end})</span>
-            <button onclick="deleteOp(${o.id})" style="background:var(--red); width:auto; padding:2px 8px;">刪除</button>
-        </div>
-    `).join('') || '目前無開放時段';
+            <button onclick="db.ref('opSlots/${o.id}').remove()" style="width:auto; padding:2px 8px; background:var(--red);">刪除</button>
+        </div>`).join('') || '目前無時段';
 });
 
-db.ref('bookings').on('value', snapshot => {
-    const data = snapshot.val() || {};
-    document.getElementById('adminBookingList').innerHTML = Object.values(data).map(b => `
-        <div style="background:#252525; padding:15px; border-radius:10px; border-left: 5px solid ${b.status==='pending'?'#888':'var(--green)'}; margin-bottom:10px;">
-            <span class="status-badge" style="background:${b.status==='pending'?'#888':'var(--green)'}">${b.status}</span>
-            <strong>${b.game} - ${b.title}</strong><br>
-            <div style="font-size:0.8em; color:#aaa;">${b.date} | ${b.start}-${b.end}</div>
-            <div class="admin-member-grid">
-                ${b.names.map((n, i) => `<div class="member-item">${i+1}. ${n}</div>`).join('')}
+db.ref('bookings').on('value', snap => {
+    const data = snap.val() || {};
+    document.getElementById('bkList').innerHTML = Object.values(data).map(b => `
+        <div style="background:#252525; padding:12px; margin-bottom:10px; border-radius:8px; border-left: 5px solid ${b.status==='pending'?'#888':'var(--green)'}">
+            <strong>${b.game} - ${b.title}</strong> [${b.status==='pending'?'待審核':'成功'}]<br>
+            <div class="admin-member-grid">${b.names.map((n, i) => `<div style="font-size:0.8em; color:#bbb;">${i+1}. ${n}</div>`).join('')}</div>
+            <div style="margin-top:10px;">
+                ${b.status==='pending'?`<button onclick="db.ref('bookings/${b.id}').update({status:'success'})" style="background:var(--green); width:auto; padding:4px 10px;">通過</button>`:''}
+                <button onclick="db.ref('bookings/${b.id}').remove()" style="background:#444; width:auto; padding:4px 10px;">刪除</button>
             </div>
-            <div style="margin-top:10px; display:flex; gap:10px;">
-                ${b.status==='pending' ? `<button onclick="approveBooking(${b.id})" style="background:var(--green); width:auto; padding:5px 10px;">通過</button>
-                <button onclick="rejectBooking(${b.id})" style="background:var(--red); width:auto; padding:5px 10px;">駁回</button>` : ''}
-                <button onclick="db.ref('bookings/${b.id}').remove()" style="background:#555; width:auto; padding:5px 10px;">刪除記錄</button>
-            </div>
-        </div>
-    `).join('') || '目前無預約申請';
+        </div>`).join('') || '無預約申請';
 });
 </script>
 </body>
