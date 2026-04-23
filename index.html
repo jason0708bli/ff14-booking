@@ -3,38 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>FF14 桌遊預約看板</title>
-    <!-- Firebase SDK -->
+    <!-- 使用 Firebase 穩定版 SDK -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --orange: #e67e22; --red: #e74c3c; }
+        :root { 
+            --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; 
+            --green: #2ecc71; --orange: #e67e22; --red: #e74c3c; --blue: #3498db;
+        }
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #121212; color: var(--text); padding: 20px; }
+        @keyframes bgFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        body { 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            background: linear-gradient(-45deg, #0f0f0f, #1a1a1a, #0a0e14);
+            background-size: 400% 400%; animation: bgFlow 15s infinite;
+            color: var(--text); padding: 20px; margin: 0; min-height: 100vh;
+        }
+
         .date-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; border-bottom: 1px solid #333; margin-bottom: 20px; }
         .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; white-space: nowrap; transition: 0.3s; }
-        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; }
-        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
-        .open-slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; background: rgba(212, 175, 55, 0.05); cursor: pointer; }
+        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
+
+        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .open-slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; background: rgba(212, 175, 55, 0.05); cursor: pointer; transition: 0.3s; }
+        .open-slot-btn:hover { background: rgba(212, 175, 55, 0.15); transform: translateY(-5px); }
+
         .booking-card { background: #252525; border-left: 6px solid #666; padding: 18px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; animation: slideIn 0.5s; }
         .booking-card.success { border-left-color: var(--green); }
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-bottom: 8px; display: inline-block; color: #fff; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-bottom: 8px; display: inline-block; color: white; }
         .status-p { background: #666; } .status-s { background: var(--green); }
-        .progress-container { background: #111; border-radius: 10px; height: 8px; width: 100%; margin: 10px 0; overflow: hidden; border: 1px solid #333; }
-        .progress-bar { height: 100%; transition: width 0.5s ease; background: var(--gold); }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .modal-content { background: #1a1a1a; width: 450px; padding: 30px; border-radius: 20px; border: 1px solid var(--gold); }
-        input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; margin-bottom: 10px; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); background-size: 200% 100%; animation: shimmer 3s infinite linear; color: #000; font-weight: bold; cursor: pointer; border: none; }
+        .modal-content { background: #1a1a1a; width: 450px; padding: 30px; border-radius: 20px; border: 1px solid var(--gold); max-height: 90vh; overflow-y: auto; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; margin-bottom: 10px; box-sizing: border-box; }
+        button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        .b-p { display: flex; gap: 5px; margin-bottom: 5px; }
+        .s-v { width: 110px !important; flex-shrink: 0; }
     </style>
 </head>
 <body>
 
+<div id="conn-state" style="font-size: 0.7em; text-align: right; color: #555;">正在連接雲端乙太網路...</div>
 <h2>FF14 桌遊預約看板</h2>
+
 <div id="dateSelector" class="date-selector"></div>
 <div id="operatingBoard" class="slot-grid"></div>
+
 <h3 style="margin-top:40px; border-bottom: 1px solid #333; padding-bottom: 10px;">預約即時動態</h3>
-<div id="bookingList"></div>
+<div id="bookingList">載入中...</div>
 
 <div id="bookingModal" class="modal-overlay">
     <div class="modal-content">
@@ -45,53 +62,72 @@
             <option value="自選桌遊" data-max="6">自選桌遊 (上限 6 人)</option>
         </select>
         <input type="text" id="userTitle" placeholder="本局標題">
-        <div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div>
+        <div style="display:flex; gap:10px;"><select id="userStartSelect"></select><span>至</span><select id="userEndSelect"></select></div>
         <label>人數</label><select id="pCount" onchange="genInputs()"></select>
-        <div id="nameFields" style="max-height:150px; overflow-y:auto; margin-bottom:10px;"></div>
-        <select id="userJoin"><option value="true">🟢 開放路人併桌</option><option value="false">🔒 私人團</option></select>
+        <div id="nameFields" style="max-height:150px; overflow-y:auto; margin-bottom:10px; border:1px solid #333; padding:5px; border-radius:8px;"></div>
         <button class="primary" onclick="confirmBooking()">送出申請 (等待審核)</button>
         <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444; border:none; cursor:pointer;">取消</button>
     </div>
 </div>
 
 <script>
-// Firebase Config
+// 1. Firebase 配置
 const firebaseConfig = {
   apiKey: "AIzaSyDlfxbnfyGu7Uhgp2ULZukcOwrPve5IYuY",
   authDomain: "://firebaseapp.com",
   databaseURL: "https://firebasedatabase.app",
   projectId: "ff14-boardgame",
   storageBucket: "ff14-boardgame.firebasestorage.app",
-  messagingSenderId: "1065149131631",
   appId: "1:1065149131631:web:89281ad9cc8f76172c969a"
 };
+
+// 2. 初始化
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+var db = firebase.database();
+
 const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
-
 let opSlots = [], bookings = [], currentViewDate = null;
+let activeOp = null;
 
-// 監聽雲端資料
-db.ref('opSlots').on('value', snap => { opSlots = snap.val() ? Object.values(snap.val()) : []; render(); });
-db.ref('bookings').on('value', snap => { bookings = snap.val() ? Object.values(snap.val()) : []; render(); });
+// 3. 連線狀態監控
+db.ref(".info/connected").on("value", (snap) => {
+    document.getElementById('conn-state').innerText = snap.val() ? "🟢 雲端同步中" : "🔴 離線模式";
+});
 
+// 4. 資料監聽
+db.ref('opSlots').on('value', snap => {
+    opSlots = snap.val() ? Object.values(snap.val()) : [];
+    render();
+});
+db.ref('bookings').on('value', snap => {
+    bookings = snap.val() ? Object.values(snap.val()) : [];
+    render();
+});
+
+// 5. 渲染邏輯
 function render() {
     const allDates = [...new Set(opSlots.map(o => o.date))].sort();
     if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
-    document.getElementById('dateSelector').innerHTML = allDates.map(d => `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`).join('') || '<p style="color:#666;">尚未發布營業時段</p>';
-    document.getElementById('operatingBoard').innerHTML = opSlots.filter(o => o.date === currentViewDate).map(o => `<div class="open-slot-btn" onclick="openBooking(${o.id})">${o.start}-${o.end}</div>`).join('');
-    document.getElementById('bookingList').innerHTML = bookings.filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => {
-        const percent = (b.names.length / b.max) * 100;
-        return `<div class="booking-card ${b.status}">
-            <span class="status-badge ${b.status==='pending'?'status-p':'status-s'}">${b.status==='pending'?'審核中':'預約成功'}</span>
-            <strong>${b.title}</strong> (${b.game})
-            <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
+    
+    document.getElementById('dateSelector').innerHTML = allDates.map(d => `
+        <div class="date-tab ${currentViewDate === d ? 'active' : ''}" onclick="currentViewDate='${d}'; render();">${d}</div>
+    `).join('') || '<p style="color:#666;">尚未發布營業時段</p>';
+
+    document.getElementById('operatingBoard').innerHTML = opSlots.filter(o => o.date === currentViewDate).map(o => `
+        <div class="open-slot-btn" onclick="openBooking(${o.id})">${o.start} - ${o.end}</div>
+    `).join('');
+
+    document.getElementById('bookingList').innerHTML = bookings.filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => `
+        <div class="booking-card ${b.status}">
+            <span class="status-badge ${b.status==='pending'?'status-p':'status-s'}">${b.status==='pending'?'審核中':'預預成功'}</span>
+            <div style="font-weight:bold;">${b.title} (${b.game})</div>
             <small>🕒 ${b.start}-${b.end} | 👥 ${b.names.length}/${b.max}</small>
-            <div style="margin-top:8px;">${b.names.map(n => `<span style="background:#111; padding:2px 6px; font-size:0.75em; border-radius:4px; margin-right:4px;">${n}</span>`).join('')}</div>
-        </div>`;
-    }).join('') || '<p style="color:#666;">今日尚無預約</p>';
+            <div style="margin-top:8px;">${b.names.map(n => `<span style="background:#111; padding:2px 6px; font-size:0.75em; border-radius:4px; margin-right:4px; border:1px solid #333;">${n}</span>`).join('')}</div>
+        </div>
+    `).join('') || '<p style="color:#666;">這天還沒有預約喔！</p>';
 }
 
+// 6. 預約操作
 function openBooking(id) {
     activeOp = opSlots.find(x => x.id === id);
     document.getElementById('userStartSelect').innerHTML = generateTimeOptions(activeOp.start, activeOp.end);
@@ -99,17 +135,40 @@ function openBooking(id) {
     document.getElementById('bookingModal').style.display = 'flex';
     toggleMaxPlayers();
 }
+
 function generateTimeOptions(s, e) {
     let html = "", curr = new Date(`2024-01-01T${s}`), end = new Date(`2024-01-01T${e}`);
-    while (curr <= end) { html += `<option value="${curr.toTimeString().substring(0, 5)}">${curr.toTimeString().substring(0, 5)}</option>`; curr.setMinutes(curr.getMinutes() + 30); }
+    while (curr <= end) {
+        let t = curr.toTimeString().substring(0, 5);
+        html += `<option value="${t}">${t}</option>`;
+        curr.setMinutes(curr.getMinutes() + 30);
+    }
     return html;
 }
+
 function confirmBooking() {
-    const names = []; document.querySelectorAll('.b-p').forEach(g => { const nv = g.querySelector('.n-v').value.trim(); if(nv) names.push(`${g.querySelector('.s-v').value} @ ${nv}`); });
+    const names = [];
+    document.querySelectorAll('.b-p').forEach(g => {
+        const nv = g.querySelector('.n-v').value.trim();
+        if(nv) names.push(`${g.querySelector('.s-v').value} @ ${nv}`);
+    });
+    if(!names.length) return alert("請輸入名子");
+
     const id = Date.now();
-    db.ref('bookings/' + id).set({ id, opId: activeOp.id, date: activeOp.date, title: document.getElementById('userTitle').value || "未命名", game: document.getElementById('userGame').value, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, names, max: parseInt(document.getElementById('userGame').selectedOptions[0].dataset.max), status: 'pending' });
-    document.getElementById('bookingModal').style.display = 'none';
+    db.ref('bookings/' + id).set({
+        id, opId: activeOp.id, date: activeOp.date,
+        title: document.getElementById('userTitle').value || "未命名",
+        game: document.getElementById('userGame').value,
+        start: document.getElementById('userStartSelect').value,
+        end: document.getElementById('userEndSelect').value,
+        names, max: parseInt(document.getElementById('userGame').selectedOptions[0].dataset.max),
+        status: 'pending'
+    }).then(() => {
+        document.getElementById('bookingModal').style.display = 'none';
+        alert("✔️ 預約申請已送出！");
+    });
 }
+
 function toggleMaxPlayers() {
     const max = document.getElementById('userGame').selectedOptions[0].dataset.max;
     let html = ""; for(let i=1; i<=max; i++) html += `<option value="${i}">${i} 人</option>`;
@@ -118,7 +177,7 @@ function toggleMaxPlayers() {
 function genInputs() {
     const count = document.getElementById('pCount').value, div = document.getElementById('nameFields'); div.innerHTML = "";
     const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
-    for(let i=0; i<count; i++) div.innerHTML += `<div class="b-p" style="display:flex; gap:5px; margin-bottom:5px;"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`;
+    for(let i=0; i<count; i++) div.innerHTML += `<div class="b-p"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`;
 }
 </script>
 </body>
