@@ -2,146 +2,84 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 GitHub 管理後台</title>
+    <title>FF14 試算表管理後台</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 90%; max-width: 600px; }
-        .section-box { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #444; }
-        h2, h3 { color: var(--gold); border-left: 5px solid var(--gold); padding-left: 15px; }
-        input, select, button, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; border: none; font-weight: bold; cursor: pointer; }
-        .item-card { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; position: relative; }
-        #sync-status { text-align: center; font-size: 0.8em; margin-bottom: 10px; color: #888; }
-        .member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; background: #1a1a1a; padding: 8px; border-radius: 5px; }
+        :root { --gold: #d4af37; --bg: #111; --card: #222; }
+        body { font-family: sans-serif; background: var(--bg); color: #eee; padding: 20px; text-align: center; }
+        .box { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #444; max-width: 500px; margin: 0 auto 20px; }
+        input, button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; }
+        button { background: var(--gold); font-weight: bold; cursor: pointer; border: none; }
+        .item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; text-align: left; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>管理者雲端控制台</h2>
-    
-    <div class="section-box">
-        <h3>🔑 身份驗證</h3>
-        <input type="password" id="ghToken" placeholder="請貼上 GitHub Token (ghp_...)">
-        <button class="primary" onclick="loadData()">🔄 讀取雲端資料 (data.json)</button>
-        <div id="sync-status">目前狀態：尚未連線</div>
-    </div>
+<div class="box">
+    <h2 style="color:var(--gold);">管理者工作台 (試算表版)</h2>
+    <input type="date" id="opDate">
+    <div style="display:flex; gap:10px;"><input type="time" id="opStart" value="18:00"><input type="time" id="opEnd" value="23:00"></div>
+    <button onclick="addOp()">發布營業時段</button>
+</div>
 
-    <div class="section-box">
-        <h3>1. 發布營業時段</h3>
-        <input type="date" id="opDate">
-        <div style="display:flex; gap:10px;">
-            <input type="time" id="opStart" value="18:00"> <span>至</span> <input type="time" id="opEnd" value="23:00">
-        </div>
-        <button class="primary" onclick="addOp()">確認發布到看板</button>
-    </div>
+<div class="box">
+    <h3>預約審核中</h3>
+    <div id="bkList">讀取中...</div>
+</div>
 
-    <div class="section-box">
-        <h3>2. 時段管理</h3>
-        <div id="opList">請先讀取資料</div>
-    </div>
-
-    <div class="section-box">
-        <h3>3. 預約審核中心</h3>
-        <div id="bkList">請先讀取資料</div>
-    </div>
+<div class="box">
+    <h3>開放時段管理</h3>
+    <div id="opList">讀取中...</div>
 </div>
 
 <script>
-const GITHUB_USER = "jason0708bli";
-const GITHUB_REPO = "ff14-booking";
-const FILE_PATH = "data.json";
+const API_URL = "https://sheetdb.io";
+let allData = [];
 
-let currentData = { opSlots: {}, bookings: {} };
-let fileSha = ""; 
-
-async function loadData() {
-    const token = document.getElementById('ghToken').value;
-    if(!token) return alert("請貼上 Token！");
-    
-    document.getElementById('sync-status').innerText = "⏳ 正在與 GitHub 通訊...";
-    try {
-        const res = await fetch(`https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?nocache=${Date.now()}`, {
-            headers: { "Authorization": `token ${token}` }
-        });
-        const json = await res.json();
-        if (res.status !== 200) throw new Error("Token 錯誤或檔案不存在");
-        
-        fileSha = json.sha;
-        currentData = JSON.parse(decodeURIComponent(escape(atob(json.content))));
-        render();
-        document.getElementById('sync-status').innerText = "✅ 連線成功：資料已同步";
-        document.getElementById('sync-status').style.color = "#2ecc71";
-    } catch (e) {
-        alert(e.message);
-        document.getElementById('sync-status').innerText = "❌ 連線失敗";
-    }
+async function fetchData() {
+    const res = await fetch(API_URL);
+    allData = await res.json();
+    render();
 }
 
-async function saveData() {
-    const token = document.getElementById('ghToken').value;
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(currentData, null, 2))));
-    document.getElementById('sync-status').innerText = "⏳ 正在寫入 GitHub...";
-
-    try {
-        const res = await fetch(`https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-            method: "PUT",
-            headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: "Update booking data",
-                content: content,
-                sha: fileSha
-            })
-        });
-        const json = await res.json();
-        fileSha = json.content.sha;
-        document.getElementById('sync-status').innerText = "✅ 雲端存檔完成！";
-        render();
-    } catch (e) {
-        alert("存檔失敗：" + e.message);
-    }
-}
-
-function addOp() {
+async function addOp() {
     const d = document.getElementById('opDate').value;
-    if(!d) return alert("請選日期");
-    const id = "slot_" + Date.now();
-    currentData.opSlots[id] = { id, date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value };
-    saveData();
+    if(!d) return alert("選日期");
+    const newSlot = { data: [{ id: "slot_"+Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: 'slot', status: 'active' }] };
+    await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(newSlot) });
+    alert("時段已發布"); fetchData();
 }
 
-function approveBk(id) {
-    currentData.bookings[id].status = 'success';
-    saveData();
+async function approve(id) {
+    await fetch(`${API_URL}/id/${id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({data: {status: 'success'}}) });
+    fetchData();
 }
 
-function deleteBk(id) {
-    if(confirm("確定刪除？")) { delete currentData.bookings[id]; saveData(); }
+async function del(id) {
+    if(!confirm("確定刪除？")) return;
+    await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
+    fetchData();
 }
 
 function render() {
-    // 渲染時段
-    document.getElementById('opList').innerHTML = Object.values(currentData.opSlots).map(o => `
-        <div class="item-card">
-            <span>📅 ${o.date} (${o.start}-${o.end})</span>
-            <button onclick="delete currentData.opSlots['${o.id}']; saveData();" style="width:auto; float:right; background:var(--red); padding:4px 8px;">刪除</button>
-        </div>`).join('') || "目前無開放時段";
+    const slots = allData.filter(i => i.type === 'slot');
+    const bookings = allData.filter(i => i.type === 'booking');
 
-    // 渲染預約
-    document.getElementById('bkList').innerHTML = Object.values(currentData.bookings).map(b => `
-        <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#888':'var(--green)'}">
-            <strong>${b.game} - ${b.title}</strong> [${b.status==='pending'?'待審':'已通'}]<br>
-            <small>${b.date} | ${b.start}</small>
-            <div class="member-grid">
-                ${b.names.map((n, i) => `<div style="font-size:0.8em;">${i+1}. ${n}</div>`).join('')}
+    document.getElementById('opList').innerHTML = slots.map(o => `
+        <div class="item"><span>📅 ${o.date} (${o.start}-${o.end})</span><button onclick="del('${o.id}')" style="width:auto; background:red; color:white; padding:4px 8px;">刪除</button></div>
+    `).join('') || "無時段";
+
+    document.getElementById('bkList').innerHTML = bookings.map(b => `
+        <div class="item" style="border-left:4px solid ${b.status==='pending'?'#888':'green'}">
+            <div><strong>${b.game}</strong> [${b.status}]<br><small>${b.names}</small></div>
+            <div>
+                ${b.status==='pending'?`<button onclick="approve('${b.id}')" style="width:auto; background:green; color:white; padding:4px 8px;">通過</button>`:''}
+                <button onclick="del('${b.id}')" style="width:auto; background:#444; color:white; padding:4px 8px;">刪</button>
             </div>
-            <div style="margin-top:10px;">
-                ${b.status==='pending' ? `<button onclick="approveBk('${b.id}')" style="width:auto; background:var(--green); color:white; padding:5px 12px;">通過</button>` : ''}
-                <button onclick="deleteBk('${b.id}')" style="width:auto; background:#444; color:white; padding:5px 12px; margin-left:5px;">刪除</button>
-            </div>
-        </div>`).join('') || "目前無預約申請";
+        </div>
+    `).join('') || "無預約";
 }
+
+fetchData();
 </script>
 </body>
 </html>
