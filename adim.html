@@ -2,83 +2,67 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.11</title>
+    <title>FF14 旗艦管理後台 v16.0</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
-        .box { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #444; max-width: 700px; margin: 0 auto 20px; text-align: left; }
-        h2, h3 { color: var(--gold); border-left: 5px solid var(--gold); padding-left: 15px; margin-top: 0; }
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        :root { --gold: #d4af37; --bg: #111; --card: #222; --green: #2ecc71; --red: #e74c3c; }
+        body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; text-align: center; }
+        .box { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #444; max-width: 600px; margin: 0 auto 20px; text-align: left; }
+        h2, h3 { color: var(--gold); }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; }
+        button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
         .item-card { background: #000; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #333; }
-        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #222; }
-        .name-tag { font-size: 0.85em; color: #ddd; border-bottom: 1px solid #333; padding: 2px 0; }
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: #fff; display: inline-block; margin-bottom: 5px; }
+        .name-tag { display: inline-block; background: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin: 3px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.11</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線雲端乙太網路...</div>
-    
-    <h3>1. 發布新營業時段</h3>
+    <h2>管理者控制台 v16.0</h2>
+    <div id="conn-hint" style="color: #f1c40f;">📡 乙太網路連線中...</div>
+    <hr style="border:0.5px solid #333; margin:15px 0;">
     <input type="date" id="opDate">
-    <div style="display:flex; gap:10px;">
-        <input type="time" id="opStart" value="18:00">
-        <input type="time" id="opEnd" value="23:00">
-    </div>
-    <button class="primary" onclick="addOp()">確認發布時段</button>
+    <div style="display:flex; gap:10px;"><input type="time" id="opStart" value="18:00"><input type="time" id="opEnd" value="23:00"></div>
+    <button class="primary" onclick="addOp()">發布營業時段</button>
 </div>
 
-<div class="box">
-    <h3>2. 預約審核中心 (詳細名單)</h3>
-    <div id="bkList">讀取中...</div>
-</div>
-
-<div class="box">
-    <h3>3. 看板時段管理</h3>
-    <div id="opList">讀取中...</div>
-</div>
+<div class="box"><h3>預約審核</h3><div id="bkList">讀取中...</div></div>
+<div class="box"><h3>時段管理</h3><div id="opList">讀取中...</div></div>
 
 <script>
-    // 【修正重點】完全寫死正確的網址，避免變數拼接錯誤
-    const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    
+    const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     let allData = [];
 
-    async function fetchData() {
-        try {
-            const response = await fetch(READ_URL + "&nocache=" + Date.now());
-            const text = await response.text();
-            
-            // 解析 Google Gviz 的 JSON 資料
-            const start = text.indexOf('{');
-            const end = text.lastIndexOf('}') + 1;
-            const json = JSON.parse(text.substring(start, end));
-            
-            allData = json.table.rows.map(r => ({
-                id: r.c[0]?.v || "",
-                date: r.c[1]?.v || "",
-                start: r.c[2]?.f || r.c[2]?.v || "",
-                end: r.c[3]?.f || r.c[3]?.v || "",
-                game: r.c[4]?.v || "",
-                title: r.c[5]?.v || "",
-                names: r.c[6]?.v || "",
-                status: r.c[7]?.v || "",
-                type: r.c[8]?.v || "",
-                max: r.c[9]?.v || 0
-            }));
-            
-            document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
-            document.getElementById('conn-hint').style.color = "#2ecc71";
-            render();
-        } catch (e) { 
-            console.error("fetchData 失敗:", e);
-            document.getElementById('conn-hint').innerText = "🔴 連線失敗：請檢查試算表共用設定";
-        }
+    // --- 核心：使用 JSONP 讀取，完全避開 CORS ---
+    function fetchData() {
+        const script = document.createElement('script');
+        script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
+        document.body.appendChild(script);
+        document.body.removeChild(script);
     }
+
+    function handleResponse(data) {
+        allData = data;
+        document.getElementById('conn-hint').innerText = "🟢 雲端乙太網路已對接";
+        render();
+    }
+
+    // --- 核心：寫入邏輯 ---
+    function sendAction(payload) {
+        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .then(() => {
+            alert("✅ 指令已送出");
+            setTimeout(fetchData, 3000);
+        });
+    }
+
+    function addOp() {
+        const d = document.getElementById('opDate').value;
+        if(!d) return alert("請選日期");
+        sendAction({ action: "insert", data: { id: "slot_"+Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } });
+    }
+
+    function updateStatus(id, s) { sendAction({ action: "update", id, status: s }); }
+    function delRow(id) { if(confirm("確定刪除？")) sendAction({ action: "delete", id }); }
 
     function render() {
         const slots = allData.filter(i => i.type === 'slot');
@@ -86,44 +70,18 @@
 
         document.getElementById('opList').innerHTML = slots.map(o => `
             <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
-                <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
-            </div>`).join('') || "目前看板無時段";
+                <span>📅 ${o.date} | ${o.start}-${o.end}</span>
+                <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); color:white; padding:4px 8px;">刪除</button>
+            </div>`).join('') || "無時段";
 
         document.getElementById('bkList').innerHTML = bks.map(b => `
-            <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
-                <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
-                <strong>${b.game} - ${b.title}</strong><br>
-                <small>${b.date} | ${b.start}-${b.end}</small>
-                <div class="name-grid">
-                    ${b.names ? b.names.split(', ').map((n, i) => `<div class="name-tag">${i+1}. ${n}</div>`).join('') : '無名單'}
-                </div>
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
-                    <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>
-                </div>
-            </div>`).join('') || "目前無預約申請";
-    }
-
-    async function addOp() {
-        const d = document.getElementById('opDate').value; 
-        if(!d) return alert("請選日期");
-        const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
-            alert("✅ 指令已送出"); 
-            setTimeout(fetchData, 3000); 
-        });
-    }
-
-    function updateStatus(id, s) { 
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) })
-        .then(() => setTimeout(fetchData, 2000)); 
-    }
-
-    function delRow(id) { 
-        if(!confirm("確定刪除？")) return;
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
-        .then(() => setTimeout(fetchData, 2000)); 
+            <div class="item-card">
+                <strong>${b.game} - ${b.title}</strong> [${b.status}]<br>
+                <small>${b.date} | ${b.start}</small>
+                <div style="margin:5px 0;">${b.names.split(', ').map(n => `<span class="name-tag">${n}</span>`).join('')}</div>
+                ${b.status==='pending'?`<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; width:auto;">通過</button>`:''}
+                <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; width:auto; margin-left:5px;">刪除</button>
+            </div>`).join('') || "無預約";
     }
 
     fetchData();
