@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊預約看板 v15.9</title>
+    <title>FF14 桌遊預約看板 v15.10</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --orange: #e67e22; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -15,20 +15,21 @@
         .open-slot-btn:hover { background: rgba(212, 175, 55, 0.15); transform: translateY(-3px); }
         .booking-card { background: #252525; border-left: 6px solid #666; padding: 18px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; position: relative; animation: fadeIn 0.5s; }
         .booking-card.success { border-left-color: var(--green); }
+        .mode-badge { position: absolute; top: 10px; right: 10px; padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; color: #fff; }
         .progress-container { background: #111; border-radius: 10px; height: 6px; width: 100%; margin: 10px 0; border: 1px solid #333; }
         .progress-bar { height: 100%; background: var(--gold); transition: width 0.5s; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal { background: #1a1a1a; width: 450px; padding: 25px; border-radius: 20px; border: 1px solid var(--gold); max-height: 90vh; overflow-y: auto; }
-        input, select, button { width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
-        button.primary { background: linear-gradient(90deg, #d4af37, #f1c40f, #d4af37); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        input, select, button { width: 100%; padding: 12px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
+        button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
         .p-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .s-v { width: 110px !important; flex-shrink: 0; }
-        .join-btn { background: var(--green); color: white; width: auto; padding: 6px 15px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .join-btn { background: var(--green); color: white; width: auto; padding: 6px 15px; margin-top: 5px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="conn-hint" style="font-size: 10px; text-align: right; color: #555;">📡 正在連線乙太網路...</div>
+<div id="conn-hint" style="font-size: 10px; text-align: right; color: #555;">📡 乙太網路讀取中...</div>
 <h2>FF14 桌遊預約看板</h2>
 <div id="dateSelector" class="date-selector"></div>
 <div id="operatingBoard" class="slot-grid"></div>
@@ -47,10 +48,10 @@
         <input type="text" id="userTitle" placeholder="本局標題">
         <div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div>
         <select id="userJoinMode"><option value="true">🟢 開放併桌</option><option value="false">🔒 私人團</option></select>
-        <label style="font-size: 0.7em; color: #888;">人數</label><select id="pCount" onchange="genInputs()"></select>
+        <label style="font-size: 0.7em; color: #888;">報名人數</label><select id="pCount" onchange="genInputs()"></select>
         <div id="nameFields"></div>
-        <button id="submitBtn" class="primary" onclick="confirmBooking()">送出申請</button>
-        <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444; border:none; color:white;">關閉</button>
+        <button id="submitBtn" class="primary" onclick="confirmBooking()">送出申請 (待審核)</button>
+        <button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444;">關閉</button>
     </div>
 </div>
 
@@ -60,12 +61,12 @@
         <p id="joinInfo" style="font-size: 0.9em; color:#888;"></p>
         <div id="joinFields"></div>
         <button id="joinConfirmBtn" class="primary" style="background:var(--green); color:white;" onclick="confirmJoin()">確定加入</button>
-        <button onclick="document.getElementById('joinModal').style.display='none'" style="background:#444; border:none; color:white;">取消</button>
+        <button onclick="document.getElementById('joinModal').style.display='none'" style="background:#444;">取消</button>
     </div>
 </div>
 
 <script>
-    // 【強制修正】前台網址同樣寫死，解決 ERR_NAME_NOT_RESOLVED
+    // 直接寫死 100% 正確的 Google 網址
     const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
@@ -74,17 +75,21 @@
 
     async function fetchData() {
         try {
-            const res = await fetch(READ_URL);
+            const res = await fetch(READ_URL + "&nocache=" + Date.now());
             const text = await res.text();
-            const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
-            const json = JSON.parse(jsonText);
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}') + 1;
+            const json = JSON.parse(text.substring(start, end));
             allData = json.table.rows.map(r => ({
-                id: r.c[0]?.v || "", date: r.c[1]?.v || "", start: r.c[2]?.f || r.c[2]?.v || "", end: r.c[3]?.f || r.c[3]?.v || "",
-                game: r.c[4]?.v || "", title: r.c[5]?.v || "", names: r.c[6]?.v || "", status: r.c[7]?.v || "", type: r.c[8]?.v || "", max: r.c[9]?.v || 0
+                id: r.c[0]?.v || "", date: r.c[1]?.v || "", 
+                start: r.c[2]?.f || r.c[2]?.v || "", end: r.c[3]?.f || r.c[3]?.v || "",
+                game: r.c[4]?.v || "", title: r.c[5]?.v || "", 
+                names: r.c[6]?.v || "", status: r.c[7]?.v || "", 
+                type: r.c[8]?.v || "", max: r.c[9]?.v || 0
             }));
-            document.getElementById('conn-hint').innerText = "🟢 乙太網路已連線";
+            document.getElementById('conn-hint').innerText = "🟢 雲端同步中";
             render();
-        } catch (e) { console.error("讀取失敗", e); }
+        } catch (e) { document.getElementById('conn-hint').innerText = "🔴 連線異常"; }
     }
 
     function render() {
@@ -97,27 +102,28 @@
         document.getElementById('operatingBoard').innerHTML = slots.filter(o => o.date === currentViewDate).map(o => `<div class="open-slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`).join('') || "今日無開放";
         
         document.getElementById('bookingList').innerHTML = bks.filter(b => b.date === currentViewDate && b.status !== 'fail').map(b => {
-            const nameList = b.names ? b.names.split(', ') : [];
-            const isPrivate = b.names && b.names.includes("[私人]");
+            const nameList = b.names ? String(b.names).split(', ') : [];
+            const isPrivate = String(b.names).includes("[私人]");
             const currentCount = nameList.length;
-            const percent = (currentCount / (b.max || 1)) * 100;
+            const percent = (currentCount / b.max) * 100;
             return `
             <div class="booking-card ${b.status}">
-                <span style="float:right; font-size:10px;">${b.status==='pending'?'[審核中]':'[✅已通過]'}</span>
+                <div class="mode-badge" style="background:${isPrivate ? 'var(--orange)' : 'var(--green)'}">${isPrivate ? '🔒私人' : '🟢併桌'}</div>
+                <span style="float:right; font-size:10px; margin-right:45px;">${b.status==='pending'?'[審核中]':'[已通過]'}</span>
                 <strong>${b.title}</strong> (${b.game})
                 <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
                 <small>🕒 ${b.start}-${b.end} | 👥 ${currentCount}/${b.max}人</small><br>
                 <div style="margin-top:8px; font-size:0.8em; color:#bbb;">${b.names}</div>
                 ${(b.status === 'success' && currentCount < b.max && !isPrivate) ? `<button class="join-btn" onclick="openJoin('${b.id}')">我要併桌</button>` : ''}
             </div>`;
-        }).join('') || "尚無預約紀錄";
+        }).join('') || "今日尚無預約";
     }
 
     function openBooking(id) {
         activeOp = allData.find(i => i.id === id);
         const generateTimes = (s, e) => {
-            let h = "", c = new Date("2024-01-01T" + s), stop = new Date("2024-01-01T" + e);
-            while(c <= stop) { h += '<option>' + c.toTimeString().substring(0, 5) + '</option>'; c.setMinutes(c.getMinutes() + 30); }
+            let h = "", c = new Date(`2024-01-01T${s}`), stop = new Date(`2024-01-01T${e}`);
+            while(c <= stop) { h += `<option>${c.toTimeString().substring(0, 5)}</option>`; c.setMinutes(c.getMinutes() + 30); }
             return h;
         };
         document.getElementById('userStartSelect').innerHTML = generateTimes(activeOp.start, activeOp.end);
@@ -134,19 +140,23 @@
     }
 
     async function confirmJoin() {
-        const n = document.getElementById('jName').value.trim(); if(!n) return alert("請填名");
+        const n = document.getElementById('jName').value.trim(); if(!n) return alert("請填名字");
         const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n;
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { alert("申請成功！"); document.getElementById('joinModal').style.display = 'none'; setTimeout(fetchData, 2000); });
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => {
+            alert("併桌申請已送出！"); document.getElementById('joinModal').style.display = 'none'; setTimeout(fetchData, 2000);
+        });
     }
 
     async function confirmBooking() {
         const names = []; document.querySelectorAll('.p-row').forEach(g => {
             const nv = g.querySelector('.n-v').value.trim(); if(nv) names.push(`${g.querySelector('.s-v').value}@${nv}`);
         });
-        if(names.length === 0) return alert("請填名");
+        if(names.length === 0) return alert("請輸入名字");
         const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", ");
         const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: document.getElementById('userGame').value, title: document.getElementById('userTitle').value || "未命名", names: namesStr, status: "pending", type: "booking", max: document.getElementById('userGame').selectedOptions.dataset.max } };
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { alert("申請已送出！"); document.getElementById('bookingModal').style.display = 'none'; setTimeout(fetchData, 2000); });
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => {
+            alert("預約申請已送出！"); document.getElementById('bookingModal').style.display = 'none'; setTimeout(fetchData, 2000);
+        });
     }
 
     function toggleMax() {
