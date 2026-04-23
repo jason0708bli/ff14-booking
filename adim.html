@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.8</title>
+    <title>FF14 旗艦管理後台 v15.10</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,7 +19,7 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.8</h2>
+    <h2>管理者控制台 v15.10</h2>
     <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在同步雲端乙太網路...</div>
     
     <h3>1. 發布新營業時段</h3>
@@ -42,20 +42,22 @@
 </div>
 
 <script>
-    // 【終極修正：直接寫死完整網址，不使用變數拼接，避免解析錯誤】
+    // 直接寫死 100% 正確的 Google 網址，不進行任何變數拼接
     const READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-
+    
     let allData = [];
 
     async function fetchData() {
         try {
-            const res = await fetch(READ_URL);
-            const text = await res.text();
-            // 解析 Google Gviz 回傳的格式 (去掉外層 callback)
-            const startIdx = text.indexOf("(") + 1;
-            const endIdx = text.lastIndexOf(")");
-            const json = JSON.parse(text.substring(startIdx, endIdx));
+            // 加入快取消除機制
+            const response = await fetch(READ_URL + "&nocache=" + Date.now());
+            const text = await response.text();
+            
+            // 強制解析 Gviz 的 JSON 結構
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}') + 1;
+            const json = JSON.parse(text.substring(start, end));
             
             allData = json.table.rows.map(r => ({
                 id: r.c[0]?.v || "",
@@ -74,8 +76,8 @@
             document.getElementById('conn-hint').style.color = "#2ecc71";
             render();
         } catch (e) { 
-            console.error("讀取錯誤:", e);
-            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查網路或試算表共用";
+            console.error("錯誤發生在 fetchData:", e);
+            document.getElementById('conn-hint').innerText = "🔴 連線失敗：請檢查 GitHub 網路或試算表共用";
         }
     }
 
@@ -87,7 +89,7 @@
             <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
                 <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
-            </div>`).join('') || "目前無時段";
+            </div>`).join('') || "目前看板無時段";
 
         document.getElementById('bkList').innerHTML = bks.map(b => `
             <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
@@ -101,30 +103,27 @@
                     ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
                     <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>
                 </div>
-            </div>`).join('') || "目前無申請";
+            </div>`).join('') || "目前無預約申請";
     }
 
     async function addOp() {
         const d = document.getElementById('opDate').value; 
         if(!d) return alert("請選日期");
-        const payload = { 
-            action: "insert", 
-            data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
-        };
+        const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
         fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
-            alert("✅ 指令已送出"); 
+            alert("✅ 指令已發出"); 
             setTimeout(fetchData, 3000); 
         });
     }
 
     function updateStatus(id, s) { 
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id: id, status: s }) })
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) })
         .then(() => setTimeout(fetchData, 2000)); 
     }
 
     function delRow(id) { 
         if(!confirm("確定刪除？")) return;
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id: id }) })
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
         .then(() => setTimeout(fetchData, 2000)); 
     }
 
