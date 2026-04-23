@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.12</title>
+    <title>FF14 旗艦管理後台 v15.15</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.12</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在接收雲端訊號...</div>
+    <h2>管理者控制台 v15.15</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線雲端資料庫...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -33,85 +33,59 @@
 
 <div class="box">
     <h3>2. 預約審核中心</h3>
-    <div id="bkList">讀取中...</div>
+    <div id="bkList">載入中...</div>
 </div>
 
 <div class="box">
     <h3>3. 看板時段管理</h3>
-    <div id="opList">讀取中...</div>
+    <div id="opList">載入中...</div>
 </div>
 
 <script>
-    var READ_URL = "https://docs.google.com/spreadsheets/d/1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY/edit?usp=sharing";
+    // --- 網址配置 (請務必校對) ---
+    var SHEET_ID = "1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY";
+    // 寫入線：找服務生
     var GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
+    
     var allData = [];
 
-    async function fetchData() {
-        try {
-            const res = await fetch(READ_URL + "&t=" + Date.now());
-            const text = await res.text();
-            
-            // 【核心修正】精確過濾 Google 的非標準 JSON 前綴
-            const startIdx = text.indexOf('{');
-            const endIdx = text.lastIndexOf('}') + 1;
-            const jsonText = text.substring(startIdx, endIdx);
-            const json = JSON.parse(jsonText);
-            
-            allData = json.table.rows.map(function(r) {
-                // 安全抓取函數
-                var v = function(i) { return (r.c && r.c[i]) ? r.c[i].v : ""; };
-                var f = function(i) { return (r.c && r.c[i]) ? (r.c[i].f || r.c[i].v) : ""; };
+    // --- 【第一部分：讀取邏輯】走 Gviz 櫥窗 ---
+    window.google = { visualization: { Query: { setResponse: function(response) {
+        processData(response);
+    }}}};
 
-                return {
-                    id: v(0), date: v(1), start: f(2), end: f(3),
-                    game: v(4), title: v(5), names: v(6),
-                    status: v(7), type: v(8), max: v(9)
-                };
-            });
-            
-            document.getElementById('conn-hint').innerText = "🟢 雲端對接完成";
-            document.getElementById('conn-hint').style.color = "#2ecc71";
-            render();
-        } catch (e) { 
-            console.error("解析失敗:", e);
-            document.getElementById('conn-hint').innerText = "🔴 格式解析錯誤，請重整頁面";
-        }
+    function fetchData() {
+        const oldScript = document.getElementById('gviz-script');
+        if (oldScript) oldScript.remove();
+        const script = document.createElement('script');
+        script.id = 'gviz-script';
+        script.src = "https://google.com" + SHEET_ID + "/gviz/tq?tqx=out:json&t=" + Date.now();
+        document.body.appendChild(script);
     }
 
-    function render() {
-        const slots = allData.filter(function(i){ return i.type === 'slot'; });
-        const bks = allData.filter(function(i){ return i.type === 'booking'; });
-
-        document.getElementById('opList').innerHTML = slots.map(function(o){
-            return '<div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">' +
-                   '<span>📅 ' + o.date + ' | 🕒 ' + o.start + ' - ' + o.end + '</span>' +
-                   '<button onclick="delRow(\''+ o.id +'\')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>' +
-                   '</div>';
-        }).join('') || "目前看板無時段";
-
-        document.getElementById('bkList').innerHTML = bks.map(function(b){
-            const nameList = b.names ? String(b.names).split(', ') : [];
-            const nameHtml = nameList.map(function(n, i){ return '<div class="name-tag">' + (i+1) + '. ' + n + '</div>'; }).join('');
-            
-            return '<div class="item-card" style="border-left:5px solid ' + (b.status==='pending'?'#666':'var(--green)') + '">' +
-                   '<div class="status-badge" style="background:' + (b.status==='pending'?'#666':'var(--green)') + '">' + (b.status==='pending'?'待審核':'預約成功') + '</div><br>' +
-                   '<strong>' + b.game + ' - ' + b.title + '</strong><br>' +
-                   '<small>' + b.date + ' | ' + b.start + ' - ' + b.end + '</small>' +
-                   '<div class="name-grid">' + nameHtml + '</div>' +
-                   '<div style="margin-top:10px; display:flex; gap:10px;">' +
-                   (b.status === 'pending' ? '<button onclick="updateStatus(\''+ b.id +'\',\'success\')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">核准通過</button>' : '') +
-                   '<button onclick="delRow(\''+ b.id +'\')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除紀錄</button>' +
-                   '</div></div>';
-        }).join('') || "目前無申請";
+    function processData(json) {
+        if (!json.table) return document.getElementById('conn-hint').innerText = "🔴 讀取失敗";
+        allData = json.table.rows.map(function(r) {
+            var v = function(i) { return (r.c && r.c[i]) ? r.c[i].v : ""; };
+            var f = function(i) { return (r.c && r.c[i]) ? (r.c[i].f || r.c[i].v) : ""; };
+            return { id: v(0), date: v(1), start: f(2), end: f(3), game: v(4), title: v(5), names: v(6), status: v(7), type: v(8), max: v(9) };
+        });
+        document.getElementById('conn-hint').innerText = "🟢 雲端同步完成 (雙線運作模式)";
+        document.getElementById('conn-hint').style.color = "#2ecc71";
+        render();
     }
 
+    // --- 【第二部分：寫入邏輯】走 GAS 郵差 ---
     async function addOp() {
         const d = document.getElementById('opDate').value; 
         if(!d) return alert("請選日期");
         const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
-        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(function(){ 
-            alert("✅ 指令已送出！請等待 3 秒資料寫入..."); 
-            setTimeout(fetchData, 3000); 
+        
+        // 正確呼叫 GAS_URL 發送資料
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .then(function(){ 
+            alert("✅ 指令已發出！資料入庫需要 3-5 秒。"); 
+            setTimeout(fetchData, 3000); // 延遲 3 秒後重新抓櫥窗
         });
     }
 
@@ -124,6 +98,33 @@
         if(!confirm("確定刪除？")) return;
         fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id:id }) })
         .then(function(){ setTimeout(fetchData, 2000); }); 
+    }
+
+    // --- 【第三部分：渲染邏輯】 ---
+    function render() {
+        const slots = allData.filter(function(i){ return i.type === 'slot'; });
+        const bks = allData.filter(function(i){ return i.type === 'booking'; });
+
+        document.getElementById('opList').innerHTML = slots.map(function(o){
+            return '<div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">' +
+                   '<span>📅 ' + o.date + ' | 🕒 ' + o.start + ' - ' + o.end + '</span>' +
+                   '<button onclick="delRow(\''+ o.id +'\')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>' +
+                   '</div>';
+        }).join('') || "目前看板無時段";
+
+        document.getElementById('bkList').innerHTML = bks.map(function(b){
+            const names = b.names ? String(b.names).split(', ') : [];
+            const nameHtml = names.map(function(n, i){ return '<div class="name-tag">' + (i+1) + '. ' + n + '</div>'; }).join('');
+            return '<div class="item-card" style="border-left:5px solid ' + (b.status==='pending'?'#666':'var(--green)') + '">' +
+                   '<div class="status-badge" style="background:' + (b.status==='pending'?'#666':'var(--green)') + '">' + (b.status==='pending'?'待審核':'預約成功') + '</div><br>' +
+                   '<strong>' + b.game + ' - ' + b.title + '</strong><br>' +
+                   '<small>' + b.date + ' | ' + b.start + ' - ' + b.end + '</small>' +
+                   '<div class="name-grid">' + nameHtml + '</div>' +
+                   '<div style="margin-top:10px; display:flex; gap:10px;">' +
+                   (b.status === 'pending' ? '<button onclick="updateStatus(\''+ b.id +'\',\'success\')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>' : '') +
+                   '<button onclick="delRow(\''+ b.id +'\')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>' +
+                   '</div></div>';
+        }).join('') || "目前無預約申請";
     }
 
     fetchData();
