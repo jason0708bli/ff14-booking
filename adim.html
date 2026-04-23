@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v15.1</title>
+    <title>FF14 旗艦管理後台 v15.3</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --red: #e74c3c; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #111; color: var(--text); padding: 20px; text-align: center; }
@@ -19,8 +19,8 @@
 <body>
 
 <div class="box">
-    <h2>管理者控制台 v15.1</h2>
-    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在連線至 Google 雲端...</div>
+    <h2>管理者控制台 v15.3</h2>
+    <div id="conn-hint" style="font-size: 12px; color: #f1c40f; margin-bottom: 15px;">📡 正在同步雲端乙太網路...</div>
     
     <h3>1. 發布新營業時段</h3>
     <input type="date" id="opDate">
@@ -32,7 +32,7 @@
 </div>
 
 <div class="box">
-    <h3>2. 預約審核中心 (詳細名單)</h3>
+    <h3>2. 預約審核中心</h3>
     <div id="bkList">讀取中...</div>
 </div>
 
@@ -42,67 +42,90 @@
 </div>
 
 <script>
-const SHEET_ID = "1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY";
-const READ_URL = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json`;
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
+    // 唯一變數定義
+    const SHEET_ID = "1tef_7gaTP8q7O4xoDvxfw_bpvi179GE4zxD-_NX3wWY";
+    const READ_URL = https://google.com{SHEET_ID}/gviz/tq?tqx=out:json;
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
+    let allData = [];
 
-let allData = [];
-
-let allData = [];
-
-async function fetchData() {
-    try {
-        const res = await fetch(READ_URL);
-        const text = await res.text();
-        const json = JSON.parse(text.substring(text.indexOf("(") + 1, text.lastIndexOf(")")));
-        allData = json.table.rows.map(r => ({
-            id: r.c[0]?.v || "", date: r.c[1]?.v || "", start: r.c[2]?.f || r.c[2]?.v || "", end: r.c[3]?.f || r.c[3]?.v || "",
-            game: r.c[4]?.v || "", title: r.c[5]?.v || "", names: r.c[6]?.v || "", status: r.c[7]?.v || "", type: r.c[8]?.v || "", max: r.c[9]?.v || 0
-        }));
-        document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
-        document.getElementById('conn-hint').style.color = "#2ecc71";
-        render();
-    } catch (e) { 
-        document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查共用設定";
+    async function fetchData() {
+        try {
+            const res = await fetch(READ_URL);
+            const text = await res.text();
+            const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
+            const json = JSON.parse(jsonText);
+            
+            allData = json.table.rows.map(r => ({
+                id: r.c[0]?.v || "",
+                date: r.c[1]?.v || "",
+                start: r.c[2]?.f || r.c[2]?.v || "",
+                end: r.c[3]?.f || r.c[3]?.v || "",
+                game: r.c[4]?.v || "",
+                title: r.c[5]?.v || "",
+                names: r.c[6]?.v || "",
+                status: r.c[7]?.v || "",
+                type: r.c[8]?.v || "",
+                max: r.c[9]?.v || 0
+            }));
+            
+            document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
+            document.getElementById('conn-hint').style.color = "#2ecc71";
+            render();
+        } catch (e) { 
+            document.getElementById('conn-hint').innerText = "🔴 連線失敗，請檢查網路或共用設定";
+        }
     }
-}
 
-function render() {
-    const slots = allData.filter(i => i.type === 'slot');
-    const bks = allData.filter(i => i.type === 'booking');
+    function render() {
+        const slots = allData.filter(i => i.type === 'slot');
+        const bks = allData.filter(i => i.type === 'booking');
 
-    document.getElementById('opList').innerHTML = slots.map(o => `
-        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
-            <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
-        </div>`).join('') || "目前看板無時段";
+        document.getElementById('opList').innerHTML = slots.map(o => `
+            <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📅 ${o.date} | 🕒 ${o.start} - ${o.end}</span>
+                <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); padding:5px 10px; border:none; color:white; border-radius:4px; cursor:pointer;">刪除</button>
+            </div>`).join('') || "目前無時段";
 
-    document.getElementById('bkList').innerHTML = bks.map(b => `
-        <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
-            <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
-            <strong>${b.game} - ${b.title}</strong><br>
-            <small>${b.date} | ${b.start}-${b.end}</small>
-            <div class="name-grid">
-                ${b.names ? b.names.split(', ').map((n, i) => `<div class="name-tag">${i+1}. ${n}</div>`).join('') : '無名單'}
-            </div>
-            <div style="margin-top:10px; display:flex; gap:10px;">
-                ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
-                <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除預約</button>
-            </div>
-        </div>`).join('') || "目前無預約申請";
-}
+        document.getElementById('bkList').innerHTML = bks.map(b => `
+            <div class="item-card" style="border-left:5px solid ${b.status==='pending'?'#666':'var(--green)'}">
+                <div class="status-badge" style="background:${b.status==='pending'?'#666':'var(--green)'}">${b.status==='pending'?'待審核':'預約成功'}</div>
+                <strong>${b.game} - ${b.title}</strong><br>
+                <small>${b.date} | ${b.start}-${b.end}</small>
+                <div class="name-grid">
+                    ${b.names ? b.names.split(', ').map((n, i) => `<div class="name-tag">${i+1}. ${n}</div>`).join('') : '無名單'}
+                </div>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    ${b.status==='pending' ? `<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">通過</button>` : ''}
+                    <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">刪除</button>
+                </div>
+            </div>`).join('') || "目前無申請";
+    }
 
-async function addOp() {
-    const d = document.getElementById('opDate').value; 
-    if(!d) return alert("請選日期");
-    const payload = { action: "insert", data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } };
-    fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { alert("✅ 指令已送出"); setTimeout(fetchData, 3000); });
-}
+    async function addOp() {
+        const d = document.getElementById('opDate').value; 
+        if(!d) return alert("請選日期");
+        const payload = { 
+            action: "insert", 
+            data: { id: "slot_" + Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } 
+        };
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
+            alert("✅ 指令已送出"); 
+            setTimeout(fetchData, 3000); 
+        });
+    }
 
-function updateStatus(id, s) { fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) }).then(() => setTimeout(fetchData, 2000)); }
-function delRow(id) { if(confirm("確定刪除？")) fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) }).then(() => setTimeout(fetchData, 2000)); }
+    function updateStatus(id, s) { 
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"update", id, status:s }) })
+        .then(() => setTimeout(fetchData, 2000)); 
+    }
 
-fetchData();
+    function delRow(id) { 
+        if(!confirm("確定刪除？")) return;
+        fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:"delete", id }) })
+        .then(() => setTimeout(fetchData, 2000)); 
+    }
+
+    fetchData();
 </script>
 </body>
 </html>
