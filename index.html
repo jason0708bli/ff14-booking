@@ -2,23 +2,20 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊預約看板 v16.1</title>
+    <title>FF14 桌遊預約看板 v16.2</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --orange: #e67e22; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #121212; color: var(--text); padding: 20px; margin: 0; }
-        .date-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; min-height: 45px; }
-        .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; white-space: nowrap; transition: 0.3s; }
-        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3); }
-        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .open-slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; background: rgba(212, 175, 55, 0.05); cursor: pointer; transition: 0.3s; }
-        .booking-card { background: #252525; border-left: 6px solid #666; padding: 18px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; position: relative; animation: fadeIn 0.5s; }
+        .date-tab { padding: 10px 20px; background: #252525; border-radius: 30px; cursor: pointer; border: 1px solid #444; margin-right: 10px; display: inline-block; }
+        .date-tab.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
+        .slot-btn { border: 2px dashed var(--gold); padding: 15px; text-align: center; border-radius: 10px; cursor: pointer; margin-top: 10px; display: inline-block; min-width: 140px; background: rgba(212,175,55,0.05); }
+        .booking-card { background: #252525; border-left: 6px solid #666; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; position: relative; }
         .booking-card.success { border-left-color: var(--green); }
         .progress-container { background: #111; border-radius: 10px; height: 6px; width: 100%; margin: 10px 0; border: 1px solid #333; }
         .progress-bar { height: 100%; background: var(--gold); transition: width 0.5s; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
         .modal { background: #1a1a1a; width: 450px; padding: 25px; border-radius: 20px; border: 1px solid var(--gold); max-height: 90vh; overflow-y: auto; }
-        input, select, button { width: 100%; padding: 12px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid #444; box-sizing: border-box; }
         button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
         .p-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .join-btn { background: var(--green); color: white; width: auto; padding: 6px 15px; border: none; cursor: pointer; border-radius: 4px; }
@@ -26,16 +23,16 @@
 </head>
 <body>
 
-<div id="conn-hint" style="font-size: 10px; text-align: right; color: #888;">📡 正在連線雲端資料庫...</div>
+<div id="conn-hint" style="font-size: 10px; text-align: right; color: #888;">📡 正在接收雲端訊號...</div>
 <h2>FF14 桌遊預約看板</h2>
-<div id="dateSelector" class="date-selector"></div>
-<div id="operatingBoard" class="slot-grid"></div>
+<div id="dateSelector" style="margin-bottom: 20px; overflow-x: auto; white-space: nowrap;"></div>
+<div id="operatingBoard"></div>
 
-<h3 style="margin-top:40px; border-bottom: 1px solid #333; padding-bottom: 10px;">預約即時動態</h3>
-<div id="bookingList">等待資料傳輸中...</div>
+<h3 style="margin-top:40px; border-bottom: 1px solid #333; padding-bottom: 10px;">預約動態</h3>
+<div id="bookingList">等待資料讀取中...</div>
 
-<!-- 預約與併桌彈窗 (保持不變) -->
-<div id="bookingModal" class="overlay"><div class="modal"><h3 id="mTitle">發起預約申請</h3><select id="userGame" onchange="toggleMax()"><option value="阿瓦隆" data-max="10">阿瓦隆 (10人)</option><option value="TRPG" data-max="4">TRPG (4人)</option><option value="自選桌遊" data-max="6">自選桌遊 (6人)</option></select><input type="text" id="userTitle" placeholder="本局標題"><div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div><select id="userJoinMode"><option value="true">🟢 開放併桌</option><option value="false">🔒 私人團</option></select><label>起始人數</label><select id="pCount" onchange="genInputs()"></select><div id="nameFields"></div><button id="submitBtn" class="primary" onclick="confirmBooking()">送出申請</button><button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444;">關閉</button></div></div>
+<!-- 彈窗內容略，保持 v16.1 版本 -->
+<div id="bookingModal" class="overlay"><div class="modal"><h3>發起預約</h3><select id="userGame" onchange="toggleMax()"><option value="阿瓦隆" data-max="10">阿瓦隆 (10人)</option><option value="TRPG" data-max="4">TRPG (4人)</option><option value="自選桌遊" data-max="6">自選桌遊 (6人)</option></select><input type="text" id="userTitle" placeholder="本局標題"><div style="display:flex; gap:10px;"><select id="userStartSelect"></select>至<select id="userEndSelect"></select></div><select id="userJoinMode"><option value="true">🟢 開放併桌</option><option value="false">🔒 私人團</option></select><label>報名人數</label><select id="pCount" onchange="genInputs()"></select><div id="nameFields"></div><button class="primary" onclick="confirmBooking()">送出申請</button><button onclick="document.getElementById('bookingModal').style.display='none'" style="background:#444;">關閉</button></div></div>
 <div id="joinModal" class="overlay"><div class="modal"><h3>併桌加入</h3><p id="joinInfo"></p><div id="joinFields"></div><button id="joinConfirmBtn" class="primary" style="background:var(--green); color:white;" onclick="confirmJoin()">確定加入</button><button onclick="document.getElementById('joinModal').style.display='none'" style="background:#444;">取消</button></div></div>
 
 <script>
@@ -43,37 +40,29 @@
     const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
     let allData = [], currentViewDate = null, activeOp = null, targetBk = null;
 
-    // --- JSONP 讀取：加上隨機數清除快取 ---
+    // --- 關鍵：將 handleResponse 放在全域 window 下 ---
+    window.handleResponse = function(data) {
+        allData = data;
+        if(allData.length === 0) {
+            document.getElementById('bookingList').innerHTML = "目前無預約資料。";
+            return;
+        }
+        document.getElementById('conn-hint').innerText = "🟢 雲端同步完成";
+        document.getElementById('conn-hint').style.color = "#2ecc71";
+        render();
+    };
+
     function fetchData() {
-        const old = document.getElementById('jsonp-fetch');
-        if(old) old.remove();
         const script = document.createElement('script');
-        script.id = 'jsonp-fetch';
-        // 加入 _t 隨機數確保不被瀏覽器快取
-        script.src = `${API_URL}?callback=handleResponse&_t=${Date.now()}`;
+        // 加入隨機參數 t 以防止快取
+        script.src = API_URL + "?callback=handleResponse&t=" + Date.now();
         document.body.appendChild(script);
     }
 
-    function handleResponse(data) {
-        allData = data;
-        if(allData.length === 0) {
-            document.getElementById('conn-hint').innerText = "🟢 已連線 (資料庫目前是空的)";
-            document.getElementById('bookingList').innerHTML = "目前沒有任何預約資料。";
-            document.getElementById('operatingBoard').innerHTML = "店主尚未發布時段。";
-            return;
-        }
-        document.getElementById('conn-hint').innerText = "🟢 雲端乙太網路已對接";
-        render();
-    }
-
     function render() {
-        // 從所有資料中提取日期（包含時段和預約）
-        const allDates = [...new Set(allData.map(item => item.date))].filter(d => d).sort();
-        
-        // 如果沒有設定目前日期，預設選第一個
+        const allDates = [...new Set(allData.map(i => i.date))].filter(d => d).sort();
         if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
 
-        // 渲染日期標籤
         document.getElementById('dateSelector').innerHTML = allDates.map(d => 
             `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`
         ).join('');
@@ -81,82 +70,32 @@
         const slots = allData.filter(i => i.type === 'slot' && i.date === currentViewDate);
         const bks = allData.filter(i => i.type === 'booking' && i.date === currentViewDate);
 
-        // 渲染營業時段
         document.getElementById('operatingBoard').innerHTML = slots.map(o => 
-            `<div class="open-slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`
-        ).join('') || "此日期無開放時段";
+            `<div class="slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`
+        ).join('') || "今日無開放時段";
         
-        // 渲染預約列表
-        document.getElementById('bookingList').innerHTML = bks.filter(b => b.status !== 'fail').map(b => {
+        document.getElementById('bookingList').innerHTML = bks.map(b => {
             const nameList = b.names ? String(b.names).split(', ') : [];
             const isPrivate = String(b.names).includes("[私人]");
-            const currentCount = nameList.length;
-            const percent = (currentCount / (b.max || 1)) * 100;
+            const percent = (nameList.length / b.max) * 100;
             return `<div class="booking-card ${b.status}">
-                <div class="mode-badge" style="background:${isPrivate ? 'var(--orange)' : 'var(--green)'}">${isPrivate ? '🔒私人' : '🟢併桌'}</div>
-                <span style="float:right; font-size:10px; margin-right:45px;">${b.status==='pending'?'[審核中]':'[✅已通過]'}</span>
+                <span style="float:right; font-size:10px;">${b.status==='pending'?'[待審]':'[已通]'}</span>
                 <strong>${b.title}</strong> (${b.game})
                 <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
-                <small>🕒 ${b.start}-${b.end} | 👥 ${currentCount}/${b.max}人</small><br>
-                <div style="margin-top:8px; font-size:0.85em; color:#bbb;">${b.names}</div>
-                ${(b.status === 'success' && currentCount < b.max && !isPrivate) ? `<button class="join-btn" onclick="openJoin('${b.id}')">我要併桌</button>` : ''}
+                <small>🕒 ${b.start}-${b.end} | 👥 ${nameList.length}/${b.max}人</small>
+                ${(b.status === 'success' && nameList.length < b.max && !isPrivate) ? `<br><button class="join-btn" onclick="openJoin('${b.id}')">我要併桌</button>` : ''}
             </div>`;
-        }).join('') || "本日尚無預約。";
+        }).join('') || "今日尚無預約。";
     }
 
-    // --- 預約與併桌功能 (保持與 admin 同步) ---
-    function openBooking(id) {
-        activeOp = allData.find(i => i.id === id);
-        const genTimes = (s, e) => {
-            let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e);
-            while(c <= stop) { h += `<option>${c.toTimeString().substring(0, 5)}</option>`; c.setMinutes(c.getMinutes() + 30); }
-            return h;
-        };
-        document.getElementById('userStartSelect').innerHTML = genTimes(activeOp.start, activeOp.end);
-        document.getElementById('userEndSelect').innerHTML = genTimes(activeOp.start, activeOp.end);
-        document.getElementById('bookingModal').style.display = 'flex';
-        toggleMax();
-    }
+    // 發起預約與併桌邏輯（省略部分與 admin 相同之處）
+    function openBooking(id) { activeOp = allData.find(i => i.id === id); const genTimes = (s, e) => { let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e); while(c <= stop) { h += '<option>' + c.toTimeString().substring(0, 5) + '</option>'; c.setMinutes(c.getMinutes() + 30); } return h; }; document.getElementById('userStartSelect').innerHTML = genTimes(activeOp.start, activeOp.end); document.getElementById('userEndSelect').innerHTML = genTimes(activeOp.start, activeOp.end); document.getElementById('bookingModal').style.display = 'flex'; toggleMax(); }
+    function openJoin(id) { targetBk = allData.find(i => i.id === id); const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); document.getElementById('joinFields').innerHTML = `<div class="p-row"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="名字"></div>`; document.getElementById('joinModal').style.display = 'flex'; }
+    function confirmJoin() { const n = document.getElementById('jName').value.trim(); if(!n) return alert("請填名"); const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n; fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { alert("已送出！"); document.getElementById('joinModal').style.display = 'none'; setTimeout(fetchData, 2000); }); }
+    function confirmBooking() { const names = []; document.querySelectorAll('.p-row').forEach(g => { const nv = g.querySelector('.n-v').value.trim(); if(nv) names.push(g.querySelector('.s-v').value + "@" + nv); }); if(names.length === 0) return alert("請填名"); const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", "); const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: document.getElementById('userGame').value, title: document.getElementById('userTitle').value || "未命名", names: namesStr, status: "pending", type: "booking", max: document.getElementById('userGame').selectedOptions.dataset.max } }; fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { alert("已送出！"); document.getElementById('bookingModal').style.display = 'none'; setTimeout(fetchData, 2000); }); }
+    function toggleMax() { const max = document.getElementById('userGame').selectedOptions.dataset.max; let h = ""; for(let i=1; i<=max; i++) h += '<option value="'+i+'">'+i+'人</option>'; document.getElementById('pCount').innerHTML = h; genInputs(); }
+    function genInputs() { const count = document.getElementById('pCount').value, div = document.getElementById('nameFields'); div.innerHTML = ""; const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); for(let i=0; i<count; i++) div.innerHTML += `<div class="p-row"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`; }
 
-    function openJoin(id) {
-        targetBk = allData.find(i => i.id === id);
-        document.getElementById('joinInfo').innerText = `加入團：${targetBk.title}`;
-        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
-        document.getElementById('joinFields').innerHTML = `<div class="p-row"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="輸入名字"></div>`;
-        document.getElementById('joinModal').style.display = 'flex';
-    }
-
-    function confirmJoin() {
-        const n = document.getElementById('jName').value.trim(); if(!n) return alert("請填名字");
-        const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n;
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => {
-            alert("併桌申請已送出！"); document.getElementById('joinModal').style.display = 'none'; setTimeout(fetchData, 2000);
-        });
-    }
-
-    function confirmBooking() {
-        const names = []; document.querySelectorAll('.p-row').forEach(g => {
-            const nv = g.querySelector('.n-v').value.trim();
-            if(nv) names.push(g.querySelector('.s-v').value + "@" + nv);
-        });
-        if(names.length === 0) return alert("請輸入名字");
-        const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", ");
-        const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: document.getElementById('userGame').value, title: document.getElementById('userTitle').value || "未命名", names: namesStr, status: "pending", type: "booking", max: document.getElementById('userGame').selectedOptions.dataset.max } };
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => {
-            alert("預約申請已送出！"); document.getElementById('bookingModal').style.display = 'none'; setTimeout(fetchData, 2000);
-        });
-    }
-
-    function toggleMax() {
-        const max = document.getElementById('userGame').selectedOptions.dataset.max;
-        let h = ""; for(let i=1; i<=max; i++) h += `<option value="${i}">${i}人</option>`;
-        document.getElementById('pCount').innerHTML = h; genInputs();
-    }
-    function genInputs() {
-        const count = document.getElementById('pCount').value, div = document.getElementById('nameFields'); div.innerHTML = "";
-        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
-        for(let i=0; i<count; i++) div.innerHTML += `<div class="p-row"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字"></div>`;
-    }
     fetchData();
 </script>
 </body>
