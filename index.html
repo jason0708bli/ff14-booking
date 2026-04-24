@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 桌遊預約看板 v16.6 - 修復版</title>
+    <title>FF14 桌遊預約看板 v16.7</title>
     <style>
         :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1e1e1e; --text: #f0f0f0; --green: #2ecc71; --orange: #e67e22; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #121212; color: var(--text); padding: 20px; margin: 0; }
@@ -25,8 +25,8 @@
 <body>
 
 <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h2>FF14 桌遊預約看板 v16.6</h2>
-    <div id="conn-hint" style="font-size: 10px; color: #f1c40f;">📡 正在同步雲端資料...</div>
+    <h2>FF14 桌遊預約看板 v16.7</h2>
+    <div id="conn-hint" style="font-size: 10px; color: #f1c40f;">📡 正在連線雲端...</div>
 </div>
 
 <div id="dateSelector" style="margin-bottom: 20px; overflow-x: auto; white-space: nowrap;"></div>
@@ -44,8 +44,8 @@
             <option value="自選桌遊" data-max="6">自選桌遊 (6人)</option>
         </select>
         <input type="text" id="userTitle" placeholder="本局標題">
-        <div style="display:flex; gap:10px;">
-            <select id="userStartSelect"></select>至<select id="userEndSelect"></select>
+        <div style="display:flex; gap:10px; align-items: center; margin-bottom: 10px;">
+            <select id="userStartSelect" style="margin:0;"></select> 至 <select id="userEndSelect" style="margin:0;"></select>
         </div>
         <select id="userJoinMode">
             <option value="true">🟢 開放併桌</option>
@@ -73,6 +73,7 @@
     const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
     let allData = [], currentViewDate = null, activeOp = null, targetBk = null;
 
+    // 接收資料
     window.handleResponse = function(data) {
         allData = data;
         document.getElementById('conn-hint').innerText = "🟢 雲端同步成功";
@@ -81,10 +82,12 @@
     };
 
     function fetchData() {
+        const oldScript = document.getElementById('jsonp-fetch');
+        if(oldScript) oldScript.remove();
         const script = document.createElement('script');
+        script.id = 'jsonp-fetch';
         script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
         document.body.appendChild(script);
-        script.onload = () => document.body.removeChild(script);
     }
 
     function render() {
@@ -95,19 +98,20 @@
             `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`
         ).join('');
 
-        const slots = allData.filter(i => i.type === 'slot' && i.date === currentViewDate);
-        const bks = allData.filter(i => i.type === 'booking' && i.date === currentViewDate);
+        const slots = allData.filter(i => i.type === 'slot' && String(i.date) === String(currentViewDate));
+        const bks = allData.filter(i => i.type === 'booking' && String(i.date) === String(currentViewDate));
 
         document.getElementById('operatingBoard').innerHTML = slots.map(o => 
             `<div class="slot-btn" onclick="openBooking('${o.id}')">${o.start} - ${o.end}</div>`
-        ).join('') || "本日無時段";
+        ).join('') || "本日無開放時段";
         
         document.getElementById('bookingList').innerHTML = bks.map(b => {
-            const nameList = b.names ? String(b.names).replace("[私人] ", "").split(', ') : [];
             const isPrivate = String(b.names).includes("[私人]");
+            const cleanNames = String(b.names).replace("[私人] ", "");
+            const nameList = cleanNames ? cleanNames.split(', ') : [];
             const currentCount = nameList.length;
             const maxCount = parseInt(b.max) || 1;
-            const percent = (currentCount / maxCount) * 100;
+            const percent = Math.min((currentCount / maxCount) * 100, 100);
             
             return `<div class="booking-card ${b.status}">
                 <div class="mode-badge" style="background:${isPrivate ? 'var(--orange)' : 'var(--green)'}">${isPrivate ? '🔒私人' : '🟢併桌'}</div>
@@ -116,25 +120,101 @@
                 <small>🕒 ${b.start} | 👥 ${currentCount}/${maxCount}人</small>
                 ${(b.status === 'success' && currentCount < maxCount && !isPrivate) ? `<br><button class="join-btn" onclick="openJoin('${b.id}')">我要併桌</button>` : ''}
             </div>`;
-        }).join('') || "本日無預約";
+        }).join('') || "本日尚無預約";
     }
 
     function openBooking(id) { 
         activeOp = allData.find(i => i.id === id); 
-        const gen = (s, e) => { 
+        const genOptions = (s, e) => { 
             let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e); 
             while(c <= stop) { 
-                h += '<option>' + c.toTimeString().substring(0, 5) + '</option>'; 
+                let t = c.toTimeString().substring(0, 5);
+                h += `<option value="${t}">${t}</option>`; 
                 c.setMinutes(c.getMinutes() + 30); 
             } 
             return h; 
         }; 
-        document.getElementById('userStartSelect').innerHTML = gen(activeOp.start, activeOp.end); 
-        document.getElementById('userEndSelect').innerHTML = gen(activeOp.start, activeOp.end); 
+        document.getElementById('userStartSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
+        document.getElementById('userEndSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
         document.getElementById('bookingModal').style.display = 'flex'; 
         toggleMax(); 
     }
 
     function toggleMax() { 
         const gameSelect = document.getElementById('userGame');
-        const max
+        const maxVal = gameSelect.options[gameSelect.selectedIndex].getAttribute('data-max');
+        let h = ""; 
+        for(let i=1; i<=maxVal; i++) h += `<option value="${i}">${i}人</option>`; 
+        document.getElementById('pCount').innerHTML = h; 
+        genInputs(); 
+    }
+
+    function genInputs() { 
+        const count = document.getElementById('pCount').value;
+        const div = document.getElementById('nameFields'); 
+        div.innerHTML = ""; 
+        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
+        for(let i=0; i<count; i++) {
+            div.innerHTML += `<div class="p-row"><select class="s-v">${sOpts}</select><input type="text" class="n-v" placeholder="名字(ID)"></div>`;
+        }
+    }
+
+    function openJoin(id) { 
+        targetBk = allData.find(i => i.id === id); 
+        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
+        document.getElementById('joinFields').innerHTML = `<div class="p-row"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="名字(ID)"></div>`; 
+        document.getElementById('joinModal').style.display = 'flex'; 
+    }
+
+    function confirmJoin() { 
+        const n = document.getElementById('jName').value.trim(); 
+        if(!n) return alert("請填寫名字"); 
+        const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n; 
+        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { 
+            alert("併桌申請已送出！"); 
+            document.getElementById('joinModal').style.display = 'none'; 
+            setTimeout(fetchData, 1500); 
+        }); 
+    }
+
+    function confirmBooking() { 
+        const names = []; 
+        document.querySelectorAll('#nameFields .p-row').forEach(g => { 
+            const nv = g.querySelector('.n-v').value.trim(); 
+            if(nv) names.push(g.querySelector('.s-v').value + "@" + nv); 
+        }); 
+        if(names.length === 0) return alert("請至少填寫一位玩家 ID"); 
+
+        const gameSelect = document.getElementById('userGame');
+        const maxVal = gameSelect.options[gameSelect.selectedIndex].getAttribute('data-max');
+        const isPrivate = document.getElementById('userJoinMode').value === "false";
+        const namesStr = (isPrivate ? "[私人] " : "") + names.join(", "); 
+        
+        const payload = { 
+            action: "insert", 
+            data: { 
+                id: "bk_" + Date.now(), 
+                date: activeOp.date, 
+                start: document.getElementById('userStartSelect').value, 
+                end: document.getElementById('userEndSelect').value, 
+                game: gameSelect.value, 
+                title: document.getElementById('userTitle').value || "未命名本", 
+                names: namesStr, 
+                status: "pending", 
+                type: "booking", 
+                max: maxVal 
+            } 
+        }; 
+        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
+            alert("預約申請已成功送出！請等待店主審核。"); 
+            document.getElementById('bookingModal').style.display = 'none'; 
+            setTimeout(fetchData, 1500); 
+        }); 
+    }
+
+    // 啟動
+    window.onload = fetchData;
+    setInterval(fetchData, 60000); // 每分鐘刷新一次
+</script>
+</body>
+</html>
