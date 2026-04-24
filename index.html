@@ -2,228 +2,193 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>冒險者公會招募版 v19.0</title>
+    <title>冒險者公會招募看板 v20.0</title>
     <style>
-        /* 中世紀風格字體 (Blackletter / Uncial 風格) */
+        /* 載入中世紀與手寫感字體 */
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=IM+Fell+English+SC&family=Noto+Serif+TC:wght@500&display=swap');
 
         :root { 
-            --wood-dark: #2c1a0b; /* 暗木色 */
-            --paper-bg: #fdf3e3; /* 羊皮紙底色 */
-            --paper-border: #d2b48c; /* 羊皮紙邊框 */
-            --tan-leather: #a0522d; /* 皮革棕 */
-            --gold-old: #b8860b; /* 暗金色 */
-            --text-dark: #3e2723; /* 深褐文字 */
-            --green-old: #2d5a27; /* 復古綠 */
-            --red-old: #8b0000; /* 焦紅 (私人團用) */
+            --wood-dark: #1a0f06; /* 深色老木頭 */
+            --paper-bg: #d2a679; /* 琥珀色古老紙張 */
+            --paper-border: #8b5a2b; /* 焦糖色邊框 */
+            --tan-leather: #7b3f00; /* 焦茶皮革色 */
+            --gold-old: #a67c00; 
+            --text-dark: #2d1b0d; /* 墨水色 */
+            --green-old: #385232; /* 復古綠印 */
+            --red-old: #6b1c1c; /* 焦紅印 */
         }
 
         body { 
-            /* 背景：木紋質感 (使用簡單的紋理重複) */
             background-color: var(--wood-dark);
             background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png'); 
             color: var(--text-dark); 
             padding: 30px; 
             margin: 0; 
-            font-family: 'Noto Serif TC', serif; /* 中文手寫感字體 */
+            font-family: 'Noto Serif TC', serif;
+            line-height: 1.6;
         }
 
-        /* 主標題美化 - 使用 Cinzel Decorative 風格 */
+        /* 標題區 */
         h2 { 
             font-family: 'Cinzel Decorative', cursive;
             color: var(--gold-old);
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+            letter-spacing: 4px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.8));
             border-bottom: 2px solid var(--tan-leather);
-            padding-bottom: 15px;
+            padding-bottom: 20px;
             margin-bottom: 30px;
         }
 
-        /* 頂部提示框 - 改為皮革手卷感 */
+        /* 頂部中間提示頁面 (Toast) */
         #toast {
             display: none; position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--tan-leather); color: #fff; 
+            background: var(--tan-leather); color: #fdf3e3; 
             border: 2px solid var(--wood-dark);
             padding: 15px 40px; border-radius: 4px; z-index: 9999; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.8); animation: slideIn 0.4s ease;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.9); animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
             font-weight: bold;
         }
 
-        /* 日期選擇器 - 改為木牌感 */
+        /* 日期選擇木牌 */
         .date-tab { 
-            padding: 12px 25px; background: #5d4037; /* 褐色 */
-            border-radius: 4px; border: 2px solid #3e2723; margin-right: 12px; 
-            display: inline-block; color: #d7ccc8; transition: all 0.2s ease;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            padding: 12px 25px; background: #3e2723; 
+            border-radius: 4px; border: 2px solid #26140f; margin-right: 12px; 
+            display: inline-block; color: #a1887f; transition: all 0.2s ease;
+            cursor: pointer; box-shadow: 2px 4px 6px rgba(0,0,0,0.6);
         }
         .date-tab.active { 
-            background: var(--tan-leather); color: white; font-weight: bold; 
-            border-color: var(--gold-old); box-shadow: 0 0 10px rgba(184,134,11,0.6);
-            transform: translateY(1px);
+            background: var(--tan-leather); color: #ffd54f; font-weight: bold; 
+            border-color: var(--gold-old); box-shadow: 0 0 15px rgba(184,134,11,0.5);
+            transform: translateY(2px);
         }
+        .date-tab:active { transform: scale(0.95); }
 
-        /* 時段按鈕 - 粗糙金屬框 */
+        /* 時段選擇 - 鐵鏽質感 */
         .slot-btn { 
-            border: 3px solid #795548; background: #3e2723; color: #d7ccc8;
+            border: 2px solid #4e342e; background: #26140f; color: #bcaaa4;
             padding: 15px; text-align: center; border-radius: 4px; 
             margin-top: 10px; display: inline-block; min-width: 140px; 
             font-family: 'IM Fell English SC', serif;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            transition: all 0.2s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8); transition: all 0.2s ease;
+            cursor: pointer;
         }
-        .slot-btn:hover { background: #5d4037; border-color: var(--gold-old); color: white; }
+        .slot-btn:hover { background: #3e2723; color: #fff; border-color: var(--gold-old); }
+        .slot-btn:active { transform: scale(0.95); }
 
-        /* 預約卡片 - 關鍵：羊皮紙質感 */
+        /* 任務卡片 - 強化歲月感羊皮紙 */
         .booking-card { 
             background-color: var(--paper-bg);
-            background-image: url('https://www.transparenttextures.com/patterns/dark-dotted-2.png'); /* 增加粗糙感 */
-            border: 2px solid var(--paper-border); 
+            background-image: url('https://www.transparenttextures.com/patterns/pinstriped-dark.png');
+            border: 1px solid var(--paper-border); 
             padding: 25px; margin-bottom: 25px; border-radius: 2px;
-            position: relative; transition: transform 0.2s ease;
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.3); /* 像紙張釘上的感覺 */
-            overflow: hidden;
+            position: relative; transition: all 0.3s ease;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5), inset 0 0 40px rgba(89, 54, 25, 0.4);
+            transform: rotate(-0.6deg); /* 隨意釘上的感覺 */
         }
-        
-        /* 羊皮紙的捲曲角落效果 (選配，增加質感) */
-        .booking-card::before {
-            content: ""; position: absolute; bottom: 0; right: 0;
-            width: 0; height: 0;
-            border-style: solid; border-width: 0 0 20px 20px;
-            border-color: transparent transparent rgba(0,0,0,0.1) transparent;
-        }
+        .booking-card:nth-child(even) { transform: rotate(0.8deg); }
+        .booking-card:hover { transform: scale(1.02) rotate(0deg); z-index: 10; box-shadow: 10px 10px 25px rgba(0,0,0,0.6); }
 
-        /* 狀態標籤 - 封蠟感 */
+        /* 封蠟標籤 */
         .mode-badge { 
-            border-radius: 50px; padding: 4px 10px; font-size: 11px; font-weight: bold; 
-            position:absolute; top:15px; right:15px; text-transform: uppercase;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 3px; padding: 4px 10px; font-size: 11px; font-weight: bold; 
+            position:absolute; top:15px; right:15px; letter-spacing: 1px;
+            box-shadow: 1px 2px 4px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);
         }
 
-        /* 進度條 - 皮革質感 */
-        .progress-container { background: rgba(0,0,0,0.15); border-radius: 2px; height: 6px; margin: 15px 0; border: 1px solid rgba(0,0,0,0.1); }
-        .progress-bar { background: var(--tan-leather); box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
+        /* 進度條 - 舊皮革帶 */
+        .progress-container { background: rgba(0,0,0,0.2); border-radius: 0; height: 8px; margin: 15px 0; border: 1px solid rgba(0,0,0,0.1); }
+        .progress-bar { background: #5d4037; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); transition: width 0.6s ease; }
 
-        /* 彈窗：重皮革手卷感 */
+        /* 彈窗 - 大型捲軸感 */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal { 
-            background: var(--paper-bg); border: 4px solid var(--tan-leather); 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.7); border-radius: 4px;
-            color: var(--text-dark);
+            background-color: #c49a6c; background-image: url('https://www.transparenttextures.com/patterns/dark-dotted-2.png');
+            width: 450px; padding: 30px; border-radius: 4px; border: 8px solid #5d4037;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9); color: #2d1b0d; transform: scale(0.9); animation: modalOpen 0.3s forwards;
         }
-        .modal h3 { font-family: 'Cinzel Decorative', cursive; color: var(--tan-leather); text-align: center; }
 
-        /* 輸入框美化 - 羊皮紙凹陷感 */
-        input, select { 
-            background: rgba(255,255,255,0.5) !important; 
-            border: 2px solid var(--paper-border) !important; 
-            color: var(--text-dark) !important;
-            border-radius: 2px !important;
-            font-family: 'Noto Serif TC', serif !important;
-        }
-        input:focus, select:focus { border-color: var(--tan-leather) !important; outline: none; }
-
-        /* 按鈕美化 - 鍛造金屬感 */
+        /* 輸入元件 */
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.08) !important; border: 1px solid #8b5a2b !important; color: #2d1b0d !important; font-family: 'Noto Serif TC', serif !important; box-sizing: border-box; }
         button.primary { 
-            background: #3e2723; color: #d7ccc8;
-            text-transform: uppercase; letter-spacing: 2px; font-weight: bold;
-            border: 2px solid #2c1a0b; border-radius: 4px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            font-family: 'IM Fell English SC', serif;
+            width: 100%; padding: 12px; background: #4e342e; color: #d7ccc8; border: 2px solid #26140f; 
+            font-family: 'IM Fell English SC', serif; font-weight: bold; letter-spacing: 2px;
+            box-shadow: 2px 4px 0px #1a0f06; cursor: pointer; transition: all 0.1s;
         }
-        button.primary:hover { background: #5d4037; border-color: var(--gold-old); color: white; }
-        
-        /* 我要併桌按鈕 - 復古綠 */
-        .join-btn-medieval {
-            background: var(--green-old) !important; color: white !important; border: none !important;
-        }
-        .join-btn-medieval:hover { filter: brightness(1.1); }
+        button.primary:active { transform: translateY(2px); box-shadow: none; }
 
-        /* 同步更新按鈕 - 焦炭色 */
-        .refresh-btn { border-color: #3e2723 !important; color: #3e2723 !important; background: transparent !important; }
-        .refresh-btn:hover { background: rgba(0,0,0,0.05) !important; }
+        .refresh-btn { border-color: var(--gold-old) !important; color: var(--gold-old) !important; background: transparent !important; cursor: pointer; padding: 8px 15px; font-family: 'Noto Serif TC'; }
 
         @keyframes slideIn { from { top: -20px; opacity: 0; } to { top: 30px; opacity: 1; } }
-
-        /* 捲軸手寫化 */
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: var(--wood-dark); }
-        ::-webkit-scrollbar-thumb { background: var(--tan-leather); border-radius: 2px; }
+        @keyframes modalOpen { to { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-<div id="toast"></div>
+<div id="toast">✅ 冒險紀錄已更新</div>
 
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 30px; border-bottom: 2px solid var(--tan-leather); padding-bottom: 15px;">
     <div>
-        <h2 style="margin:0;">冒險者公會<span style="font-weight:100; font-size: 0.8em; opacity: 0.7; font-family:'Noto Serif TC'">招募版</span></h2>
+        <h2 style="margin:0;">冒險者公會 <span style="font-weight:100; font-size: 0.8em; opacity: 0.7; font-family:'Noto Serif TC'">招募看板</span></h2>
         <div id="conn-hint" style="font-size: 12px; margin-top: 5px; color: #888;">看板狀態: <span id="status-text">連線中...</span></div>
     </div>
-    <button class="refresh-btn" onclick="manualRefresh()" style="background:transparent; cursor:pointer; width:auto; padding: 8px 15px; font-family:'Noto Serif TC'">
+    <button class="refresh-btn" onclick="manualRefresh()">
         同步公會紀錄
     </button>
 </div>
 
-<div id="dateSelector" style="margin-bottom: 30px; display:flex; gap:5px; overflow-x: auto; white-space: nowrap;"></div>
-<div id="operatingBoard" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;"></div>
+<div id="dateSelector" style="margin-bottom: 30px; display:flex; gap:5px; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;"></div>
+<div id="operatingBoard" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;"></div>
 
-<h3 style="margin-top:50px; color: var(--gold-old); font-size: 1.1em; letter-spacing: 4px; font-family: 'IM Fell English SC', serif;">ACTVE QUESTS / 招募中任務</h3>
-<div id="bookingList">資料讀取中...</div>
+<h3 style="margin-top:50px; color: var(--gold-old); font-size: 1.2em; letter-spacing: 4px; font-family: 'IM Fell English SC', serif; border-left: 5px solid var(--tan-leather); padding-left: 15px;">ACTIVE QUESTS / 招募中任務</h3>
+<div id="bookingList">正在翻閱公會日誌...</div>
 
 <div id="bookingModal" class="overlay">
     <div class="modal">
-        <h3>發起新的召集</h3>
+        <h3 style="font-family:'Cinzel Decorative'; margin-top:0;">發起新的召集</h3>
         <select id="userGame" onchange="toggleMax()">
             <option value="阿瓦隆" data-max="10">阿瓦隆 (10人)</option>
             <option value="TRPG" data-max="4">TRPG (4人)</option>
             <option value="自選桌遊" data-max="6">自選桌遊 (6人)</option>
         </select>
-        <input type="text" id="userTitle" placeholder="公會標題 (例如: 豆柴冒險團)">
+        <input type="text" id="userTitle" placeholder="召集標題 (例如: 豆柴冒險團)">
         <div style="display:flex; gap:10px; align-items: center; margin-bottom: 10px;">
             <select id="userStartSelect" style="margin:0;"></select> 至 <select id="userEndSelect" style="margin:0;"></select>
         </div>
         <select id="userJoinMode">
-            <option value="true">🟢 開放倂桌 (公會公開)</option>
-            <option value="false">🔒 私人團 (私人聘僱)</option>
+            <option value="true">🟢 公開召集 (開放併桌)</option>
+            <option value="false">🔒 私人聘僱 (私人團)</option>
         </select>
-        <label style="font-size: 0.9em; color: #666; font-family:'Noto Serif TC'">起始人數</label>
+        <label style="font-size: 0.9em; color: #5d4037; font-weight: bold;">初始冒險者人數</label>
         <select id="pCount" onchange="genInputs()"></select>
-        <div id="nameFields"></div>
+        <div id="nameFields" style="max-height: 150px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
         <button class="primary" onclick="confirmBooking()">送出公會申請</button>
-        <button onclick="closeModal('bookingModal')" style="background:transparent; border: 1px solid #999; color: #888;">取消</button>
+        <button onclick="closeModal('bookingModal')" style="width:100%; margin-top:10px; background:transparent; border: 1px solid #8b5a2b; color: #5d4037; padding: 8px; cursor:pointer;">取消</button>
     </div>
 </div>
 
 <div id="joinModal" class="overlay">
     <div class="modal">
-        <h3>申請加入冒險</h3>
+        <h3 style="font-family:'Cinzel Decorative'; margin-top:0;">申請加入冒險</h3>
         <div id="joinFields"></div>
-        <button id="joinConfirmBtn" class="primary" onclick="confirmJoin()">確定加入</button>
-        <button onclick="closeModal('joinModal')" style="background:transparent; border: 1px solid #999; color: #888;">取消</button>
+        <button id="joinConfirmBtn" class="primary" style="background:var(--green-old);" onclick="confirmJoin()">確定加入</button>
+        <button onclick="closeModal('joinModal')" style="width:100%; margin-top:10px; background:transparent; border: 1px solid #8b5a2b; color: #5d4037; padding: 8px; cursor:pointer;">取消</button>
     </div>
 </div>
 
 <script>
-    // --- JS 部分邏輯完全延續前版，僅微調提示字眼與成功邏輯 ---
     const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
     let allData = [], currentViewDate = null, activeOp = null, targetBk = null;
 
     function showToast(msg) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.display = 'block';
+        t.innerText = msg; t.style.display = 'block';
         setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    function manualRefresh() {
-        fetchData();
-        showToast("🔄 公會紀錄更新中...");
-    }
-
+    function manualRefresh() { fetchData(); showToast("🔄 正在同步公會最新紀錄..."); }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     window.handleResponse = function(data) {
@@ -234,10 +199,7 @@
     };
 
     function fetchData() {
-        const old = document.getElementById('jsonp-fetch');
-        if(old) old.remove();
         const script = document.createElement('script');
-        script.id = 'jsonp-fetch';
         script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
         document.body.appendChild(script);
     }
@@ -255,39 +217,94 @@
 
         document.getElementById('operatingBoard').innerHTML = slots.map(o => 
             `<div class="slot-btn" onclick="openBooking('${o.id}')">
-                <span style="font-size:0.8em; color:var(--gold-old); display:block; font-family:'Noto Serif TC'">可召集</span>
+                <span style="font-size:0.8em; color:var(--gold-old); display:block; font-family:'Noto Serif TC'">可發起召集</span>
                 ${o.start} - ${o.end}
             </div>`
-        ).join('') || "本日無召集時段";
+        ).join('') || "本日無可召集時段";
         
         document.getElementById('bookingList').innerHTML = bks.map(b => {
             const isPrivate = String(b.names).includes("[私人]");
-            const cleanNames = String(b.names).replace("[私人] ", "");
-            const nameList = cleanNames ? cleanNames.split(', ') : [];
+            const nameList = String(b.names).replace("[私人] ", "").split(', ').filter(n => n);
             const percent = Math.min((nameList.length / (parseInt(b.max) || 1)) * 100, 100);
+            const badgeBg = isPrivate ? 'var(--red-old)' : 'var(--green-old)';
             
             return `<div class="booking-card ${b.status}">
-                <div class="mode-badge" style="background:${isPrivate ? var('--red-old') : var('--green-old')}; color:white;">${isPrivate ? 'PRIVATE' : 'OPEN'}</div>
-                <div style="color:var(--tan-leather); font-size:0.85em; margin-bottom:5px; font-family:'Noto Serif TC'">任務項目: ${b.game}</div>
+                <div class="mode-badge" style="background:${badgeBg}; color:white;">${isPrivate ? 'PRIVATE' : 'OPEN'}</div>
+                <div style="color:var(--tan-leather); font-size:0.85em; margin-bottom:5px;">項目: ${b.game}</div>
                 <strong style="font-size:1.15em;">${b.title}</strong>
                 <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
-                <div style="display:flex; justify-content:space-between; font-size: 0.85em; opacity:0.9; font-family:'Noto Serif TC'">
+                <div style="display:flex; justify-content:space-between; font-size: 0.85em; opacity:0.9;">
                     <span>🕒 召集時間: ${b.start}</span>
                     <span>👥 成員: ${nameList.length} / ${b.max}人</span>
                 </div>
                 ${(b.status === 'success' && nameList.length < b.max && !isPrivate) ? 
-                    `<button class="primary join-btn-medieval" onclick="openJoin('${b.id}')" style="margin-top:15px; padding:10px; font-size:0.9em; width:100px;">加入冒險</button>` : ''}
+                    `<button class="primary" onclick="openJoin('${b.id}')" style="margin-top:15px; padding:8px; font-size:0.9em; background:var(--green-old);">加入冒險</button>` : ''}
             </div>`;
-        }).join('') || "NO ACTIVE PARTIES";
+        }).join('') || "本日尚無冒險者發布任務";
     }
 
-    // --- (其餘 JS 函數 openBooking, toggleMax, genInputs, confirmBooking, confirmJoin 完全保持不變) ---
-    function openBooking(id) { activeOp = allData.find(i => i.id === id); const genOptions = (s, e) => { let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e); while(c <= stop) { let t = c.toTimeString().substring(0, 5); h += `<option value="${t}">${t}</option>`; c.setMinutes(c.getMinutes() + 30); } return h; }; document.getElementById('userStartSelect').innerHTML = genOptions(activeOp.start, activeOp.end); document.getElementById('userEndSelect').innerHTML = genOptions(activeOp.start, activeOp.end); document.getElementById('bookingModal').style.display = 'flex'; toggleMax(); }
-    function toggleMax() { const game = document.getElementById('userGame'); const maxVal = game.options[game.selectedIndex].getAttribute('data-max'); let h = ""; for(let i=1; i<=maxVal; i++) h += `<option value="${i}">${i}人</option>`; document.getElementById('pCount').innerHTML = h; genInputs(); }
-    function genInputs() { const count = document.getElementById('pCount').value; const div = document.getElementById('nameFields'); div.innerHTML = ""; const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); for(let i=0; i<count; i++) div.innerHTML += `<div class="p-row"><select class="s-v" style="width:100px;">${sOpts}</select><input type="text" class="n-v" placeholder=" Player ID"></div>`; }
-    function openJoin(id) { targetBk = allData.find(i => i.id === id); const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); document.getElementById('joinFields').innerHTML = `<div class="p-row"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="名字(ID)"></div>`; document.getElementById('joinModal').style.display = 'flex'; }
-    function confirmJoin() { const n = document.getElementById('jName').value.trim(); if(!n) return alert("Please enter Player ID"); const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n; fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { showToast("✅ 加入申請已送出"); closeModal('joinModal'); setTimeout(fetchData, 1500); }); }
-    function confirmBooking() { const names = []; document.querySelectorAll('#nameFields .p-row').forEach(g => { const nv = g.querySelector('.n-v').value.trim(); if(nv) names.push(g.querySelector('.s-v').value + "@" + nv); }); if(names.length === 0) return alert("Min. 1 Player required"); const game = document.getElementById('userGame'); const maxVal = game.options[game.selectedIndex].getAttribute('data-max'); const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", "); const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: game.value, title: document.getElementById('userTitle').value || "Adventure Party", names: namesStr, status: "pending", type: "booking", max: maxVal } }; fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { showToast("🚀 召集申請已送出"); closeModal('bookingModal'); setTimeout(fetchData, 1500); }); }
+    function openBooking(id) { 
+        activeOp = allData.find(i => i.id === id); 
+        const genOptions = (s, e) => { 
+            let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e); 
+            while(c <= stop) { 
+                let t = c.toTimeString().substring(0, 5); h += `<option value="${t}">${t}</option>`; 
+                c.setMinutes(c.getMinutes() + 30); 
+            } 
+            return h; 
+        }; 
+        document.getElementById('userStartSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
+        document.getElementById('userEndSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
+        document.getElementById('bookingModal').style.display = 'flex'; 
+        toggleMax(); 
+    }
+
+    function toggleMax() { 
+        const game = document.getElementById('userGame');
+        const maxVal = game.options[game.selectedIndex].getAttribute('data-max');
+        let h = ""; for(let i=1; i<=maxVal; i++) h += `<option value="${i}">${i}人</option>`; 
+        document.getElementById('pCount').innerHTML = h; 
+        genInputs(); 
+    }
+
+    function genInputs() { 
+        const count = document.getElementById('pCount').value;
+        const div = document.getElementById('nameFields'); div.innerHTML = ""; 
+        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
+        for(let i=0; i<count; i++) div.innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><select style="width:110px; margin:0;">${sOpts}</select><input type="text" placeholder="Player ID" style="margin:0;"></div>`;
+    }
+
+    function openJoin(id) { 
+        targetBk = allData.find(i => i.id === id); 
+        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
+        document.getElementById('joinFields').innerHTML = `<div style="display:flex; gap:5px;"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="Player ID"></div>`; 
+        document.getElementById('joinModal').style.display = 'flex'; 
+    }
+
+    function confirmJoin() { 
+        const n = document.getElementById('jName').value.trim(); 
+        if(!n) return alert("請輸入冒險者 ID"); 
+        const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n; 
+        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { 
+            showToast("✅ 加入申請已送至公會"); closeModal('joinModal'); setTimeout(fetchData, 1500); 
+        }); 
+    }
+
+    function confirmBooking() { 
+        const names = []; 
+        document.querySelectorAll('#nameFields div').forEach(g => { 
+            const nv = g.querySelector('input').value.trim(); 
+            if(nv) names.push(g.querySelector('select').value + "@" + nv); 
+        }); 
+        if(names.length === 0) return alert("至少需要一位發起者 ID"); 
+        const game = document.getElementById('userGame');
+        const maxVal = game.options[game.selectedIndex].getAttribute('data-max');
+        const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", "); 
+        const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: game.value, title: document.getElementById('userTitle').value || "未命名冒險", names: namesStr, status: "pending", type: "booking", max: maxVal } }; 
+        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
+            showToast("🚀 召集令已發布至看板"); closeModal('bookingModal'); setTimeout(fetchData, 1500); 
+        }); 
+    }
 
     window.onload = fetchData;
     setInterval(fetchData, 60000);
