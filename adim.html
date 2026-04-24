@@ -2,89 +2,263 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>FF14 旗艦管理後台 v16.0</title>
+    <title>公會管理後台 v20.0</title>
     <style>
-        :root { --gold: #d4af37; --bg: #111; --card: #222; --green: #2ecc71; --red: #e74c3c; }
-        body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; text-align: center; }
-        .box { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #444; max-width: 600px; margin: 0 auto 20px; text-align: left; }
-        h2, h3 { color: var(--gold); }
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; }
-        button.primary { background: var(--gold); color: #000; font-weight: bold; cursor: pointer; border: none; }
-        .item-card { background: #000; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #333; }
-        .name-tag { display: inline-block; background: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin: 3px; }
+        /* 載入與前端一致的中世紀字體 */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=IM+Fell+English+SC&family=Noto+Serif+TC:wght@500&display=swap');
+
+        :root { 
+            --wood-dark: #1a0f06; /* 深色老木頭 */
+            --paper-bg: #d2a679; /* 琥珀色古老紙張 */
+            --paper-border: #8b5a2b; /* 焦糖色邊框 */
+            --tan-leather: #7b3f00; /* 焦茶皮革色 */
+            --gold-old: #a67c00; 
+            --text-dark: #2d1b0d; /* 墨水色 */
+            --green-old: #385232; /* 復古綠印 */
+            --red-old: #6b1c1c; /* 焦紅印 */
+        }
+
+        body { 
+            background-color: var(--wood-dark);
+            background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png'); 
+            color: var(--text-dark); 
+            padding: 30px; 
+            margin: 0; 
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        /* 標題區 */
+        h2 { 
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--gold-old);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.8));
+            border-bottom: 2px solid var(--tan-leather);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            font-family: 'IM Fell English SC', serif;
+            color: var(--tan-leather);
+            border-left: 5px solid var(--tan-leather);
+            padding-left: 15px;
+            margin-top: 40px;
+        }
+
+        /* 管理者控制台區塊 (大捲軸感) */
+        .admin-box { 
+            background-color: var(--paper-bg);
+            background-image: url('https://www.transparenttextures.com/patterns/pinstriped-dark.png');
+            border: 1px solid var(--paper-border); 
+            padding: 25px; 
+            max-width: 700px;
+            margin: 0 auto 30px;
+            border-radius: 2px;
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.6), inset 0 0 40px rgba(89, 54, 25, 0.3);
+        }
+
+        #conn-hint { 
+            text-align: center; 
+            font-size: 14px; 
+            margin-bottom: 15px; 
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* 輸入元件美化 */
+        input, select { 
+            width: 100%; padding: 12px; margin-bottom: 10px; 
+            background: rgba(0,0,0,0.08) !important; 
+            border: 1px solid #8b5a2b !important; 
+            color: #2d1b0d !important;
+            font-family: 'Noto Serif TC', serif !important;
+            box-sizing: border-box;
+        }
+
+        button.primary { 
+            width: 100%; padding: 12px; 
+            background: #4e342e; color: #d7ccc8; 
+            border: 2px solid #26140f; 
+            font-family: 'IM Fell English SC', serif; 
+            font-weight: bold; letter-spacing: 2px;
+            box-shadow: 2px 4px 0px #1a0f06; 
+            cursor: pointer; transition: all 0.1s;
+        }
+        button.primary:active { transform: translateY(2px); box-shadow: none; }
+
+        /* 清單卡片 - 羊皮紙小條 */
+        .item-card { 
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--paper-border);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 2px;
+            position: relative;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-card strong { font-size: 1.1em; color: var(--text-dark); }
+
+        /* 冒險者名字標籤 */
+        .name-tag { 
+            display: inline-block; 
+            background: var(--tan-leather); 
+            color: #fdf3e3;
+            padding: 2px 10px; 
+            border-radius: 2px; 
+            font-size: 0.85em; 
+            margin: 3px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* 審核按鈕 */
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-approve { background: var(--green-old) !important; color: white !important; border: none; padding: 8px 15px; cursor: pointer; font-family: 'Noto Serif TC'; }
+        .btn-delete { background: var(--red-old) !important; color: white !important; border: none; padding: 8px 15px; cursor: pointer; font-family: 'Noto Serif TC'; }
+
+        /* 頁面動畫 */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #bkList, #opList { animation: fadeIn 0.5s ease; }
+
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>管理者控制台 v16.0</h2>
-    <div id="conn-hint" style="color: #f1c40f;">📡 乙太網路連線中...</div>
-    <hr style="border:0.5px solid #333; margin:15px 0;">
-    <input type="date" id="opDate">
-    <div style="display:flex; gap:10px;"><input type="time" id="opStart" value="18:00"><input type="time" id="opEnd" value="23:00"></div>
-    <button class="primary" onclick="addOp()">發布營業時段</button>
+<div class="admin-box">
+    <h2 style="margin-top:0;">公會管理者權限</h2>
+    <div id="conn-hint" style="color: var(--tan-leather);">📜 正在翻閱公會史冊...</div>
+    
+    <div style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 4px;">
+        <label style="font-size: 0.9em; font-weight: bold; color: var(--tan-leather);">發布可召集日期</label>
+        <input type="date" id="opDate">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+                <label style="font-size: 0.8em;">起始時間</label>
+                <input type="time" id="opStart" value="18:00">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size: 0.8em;">結束時間</label>
+                <input type="time" id="opEnd" value="23:00">
+            </div>
+        </div>
+        <button class="primary" onclick="addOp()">發布召集令 (時段)</button>
+    </div>
 </div>
 
-<div class="box"><h3>預約審核</h3><div id="bkList">讀取中...</div></div>
-<div class="box"><h3>時段管理</h3><div id="opList">讀取中...</div></div>
+<div class="admin-box" style="max-width: 800px;">
+    <h3>待審核任務 (預約)</h3>
+    <div id="bkList">讀取中...</div>
+
+    <h3>現有召集時段</h3>
+    <div id="opList">讀取中...</div>
+</div>
 
 <script>
+    // 請確保此處 API_URL 與前端一致
     const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
     let allData = [];
 
-    // --- 核心：使用 JSONP 讀取，完全避開 CORS ---
+    // JSONP 讀取
     function fetchData() {
         const script = document.createElement('script');
         script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
         document.body.appendChild(script);
-        document.body.removeChild(script);
+        // 清理 script 標籤防止 DOM 過多
+        script.onload = () => document.body.removeChild(script);
     }
 
     function handleResponse(data) {
         allData = data;
-        document.getElementById('conn-hint').innerText = "🟢 雲端乙太網路已對接";
+        document.getElementById('conn-hint').innerText = "📜 公會史冊連線成功";
+        document.getElementById('conn-hint').style.color = "var(--green-old)";
         render();
     }
 
-    // --- 核心：寫入邏輯 ---
+    // 寫入邏輯
     function sendAction(payload) {
+        // 使用 no-cors 模式進行 POST 寫入
         fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
         .then(() => {
-            alert("✅ 指令已送出");
-            setTimeout(fetchData, 3000);
+            alert("✅ 指令已送往公會總部");
+            setTimeout(fetchData, 2000); // 延遲刷新確保資料已更新
         });
     }
 
     function addOp() {
         const d = document.getElementById('opDate').value;
-        if(!d) return alert("請選日期");
-        sendAction({ action: "insert", data: { id: "slot_"+Date.now(), date: d, start: document.getElementById('opStart').value, end: document.getElementById('opEnd').value, type: "slot", status: "active", game: "-", title: "-", names: "-", max: "-" } });
+        if(!d) return alert("請先選擇召集日期");
+        sendAction({ 
+            action: "insert", 
+            data: { 
+                id: "slot_"+Date.now(), 
+                date: d, 
+                start: document.getElementById('opStart').value, 
+                end: document.getElementById('opEnd').value, 
+                type: "slot", 
+                status: "active", 
+                game: "-", 
+                title: "-", 
+                names: "-", 
+                max: "-" 
+            } 
+        });
     }
 
-    function updateStatus(id, s) { sendAction({ action: "update", id, status: s }); }
-    function delRow(id) { if(confirm("確定刪除？")) sendAction({ action: "delete", id }); }
+    function updateStatus(id, s) { 
+        if(confirm("確定通過此項任務申請？")) {
+            sendAction({ action: "update", id, status: s }); 
+        }
+    }
+
+    function delRow(id) { 
+        if(confirm("確定從史冊中抹除此項紀錄？(不可復原)")) {
+            sendAction({ action: "delete", id }); 
+        }
+    }
 
     function render() {
-        const slots = allData.filter(i => i.type === 'slot');
+        const slots = allData.filter(i => i.type === 'slot').sort((a,b) => a.date.localeCompare(b.date));
         const bks = allData.filter(i => i.type === 'booking');
 
+        // 時段清單
         document.getElementById('opList').innerHTML = slots.map(o => `
-            <div class="item-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>📅 ${o.date} | ${o.start}-${o.end}</span>
-                <button onclick="delRow('${o.id}')" style="width:auto; background:var(--red); color:white; padding:4px 8px;">刪除</button>
-            </div>`).join('') || "無時段";
+            <div class="item-card" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                <span>📅 <strong>${o.date}</strong> <span style="margin-left:10px; color:var(--tan-leather);">${o.start} - ${o.end}</span></span>
+                <button class="btn-delete" onclick="delRow('${o.id}')">移除</button>
+            </div>`).join('') || "<p style='color:#888;'>目前無召集時段</p>";
 
-        document.getElementById('bkList').innerHTML = bks.map(b => `
+        // 預約清單
+        document.getElementById('bkList').innerHTML = bks.map(b => {
+            const nameList = b.names.split(', ').filter(n => n && n !== "-");
+            return `
             <div class="item-card">
-                <strong>${b.game} - ${b.title}</strong> [${b.status}]<br>
-                <small>${b.date} | ${b.start}</small>
-                <div style="margin:5px 0;">${b.names.split(', ').map(n => `<span class="name-tag">${n}</span>`).join('')}</div>
-                ${b.status==='pending'?`<button onclick="updateStatus('${b.id}','success')" style="background:var(--green); color:white; padding:5px 10px; width:auto;">通過</button>`:''}
-                <button onclick="delRow('${b.id}')" style="background:#444; color:white; padding:5px 10px; width:auto; margin-left:5px;">刪除</button>
-            </div>`).join('') || "無預約";
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>[${b.game}] ${b.title}</strong>
+                    <span style="font-size:0.8em; color: ${b.status === 'pending' ? 'var(--red-old)' : 'var(--green-old)'}; font-weight:bold;">
+                        ${b.status.toUpperCase()}
+                    </span>
+                </div>
+                <small style="color:var(--tan-leather);">${b.date} | ${b.start} 發起</small>
+                <div style="margin:10px 0;">
+                    ${nameList.map(n => `<span class="name-tag">${n}</span>`).join('')}
+                </div>
+                <div class="btn-group">
+                    ${b.status === 'pending' ? `<button class="btn-approve" onclick="updateStatus('${b.id}','success')">通過審核</button>` : ''}
+                    <button class="btn-delete" onclick="delRow('${b.id}')">刪除紀錄</button>
+                </div>
+            </div>`;
+        }).join('') || "<p style='color:#888;'>目前尚無任務申請</p>";
     }
 
+    // 初次讀取
     fetchData();
+    // 每一分鐘自動重整
+    setInterval(fetchData, 60000);
 </script>
 </body>
 </html>
