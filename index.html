@@ -2,312 +2,296 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>冒險者公會招募看板 v20.0</title>
+    <title>狐家桌遊店 - 艾奧傑亞據點</title>
     <style>
-        /* 載入中世紀與手寫感字體 */
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=IM+Fell+English+SC&family=Noto+Serif+TC:wght@500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Noto+Serif+TC:wght@600;900&display=swap');
 
-        :root { 
-            --wood-dark: #1a0f06; /* 深色老木頭 */
-            --paper-bg: #d2a679; /* 琥珀色古老紙張 */
-            --paper-border: #8b5a2b; /* 焦糖色邊框 */
-            --tan-leather: #7b3f00; /* 焦茶皮革色 */
-            --gold-old: #a67c00; 
-            --text-dark: #2d1b0d; /* 墨水色 */
-            --green-old: #385232; /* 復古綠印 */
-            --red-old: #6b1c1c; /* 焦紅印 */
+        :root {
+            --wood-dark: #2a1b0d;
+            --iron-black: #1a1a1a;
+            --paper-old: #d2a679;
+            --candle-gold: #c5a059;
+            --blood-red: #8b0000;
+            --good-blue: #2e5a88;
+            --glow-color: rgba(197, 160, 89, 0.15);
         }
 
-        body { 
-            background-color: var(--wood-dark);
-            background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png'); 
-            color: var(--text-dark); 
-            padding: 30px; 
-            margin: 0; 
-            font-family: 'Noto Serif TC', serif;
-            line-height: 1.6;
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: #050302; color: #3e2723;
+            font-family: 'Noto Serif TC', serif; overflow: hidden;
         }
 
-        /* 標題區 */
-        h2 { 
-            font-family: 'Cinzel Decorative', cursive;
-            color: var(--gold-old);
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.8));
-            border-bottom: 2px solid var(--tan-leather);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+        /* 背景：增加動態燭光濾鏡 */
+        .tavern-bg {
+            position: relative; width: 100vw; height: 100vh;
+            background: 
+                radial-gradient(circle at 50% 50%, var(--glow-color) 0%, transparent 80%),
+                url('https://www.transparenttextures.com/patterns/dark-wood.png'), #120d08;
+            display: flex; justify-content: center; align-items: center;
+            animation: candleFlicker 4s infinite alternate;
         }
 
-        /* 頂部中間提示頁面 (Toast) */
-        #toast {
-            display: none; position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--tan-leather); color: #fdf3e3; 
-            border: 2px solid var(--wood-dark);
-            padding: 15px 40px; border-radius: 4px; z-index: 9999; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.9); animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            font-weight: bold;
+        @keyframes candleFlicker {
+            0% { opacity: 0.95; }
+            100% { opacity: 1; }
         }
 
-        /* 日期選擇木牌 */
-        .date-tab { 
-            padding: 12px 25px; background: #3e2723; 
-            border-radius: 4px; border: 2px solid #26140f; margin-right: 12px; 
-            display: inline-block; color: #a1887f; transition: all 0.2s ease;
-            cursor: pointer; box-shadow: 2px 4px 6px rgba(0,0,0,0.6);
-        }
-        .date-tab.active { 
-            background: var(--tan-leather); color: #ffd54f; font-weight: bold; 
-            border-color: var(--gold-old); box-shadow: 0 0 15px rgba(184,134,11,0.5);
-            transform: translateY(2px);
-        }
-        .date-tab:active { transform: scale(0.95); }
-
-        /* 時段選擇 - 鐵鏽質感 */
-        .slot-btn { 
-            border: 2px solid #4e342e; background: #26140f; color: #bcaaa4;
-            padding: 15px; text-align: center; border-radius: 4px; 
-            margin-top: 10px; display: inline-block; min-width: 140px; 
-            font-family: 'IM Fell English SC', serif;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8); transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .slot-btn:hover { background: #3e2723; color: #fff; border-color: var(--gold-old); }
-        .slot-btn:active { transform: scale(0.95); }
-
-        /* 任務卡片 - 強化歲月感羊皮紙 */
-        .booking-card { 
-            background-color: var(--paper-bg);
-            background-image: url('https://www.transparenttextures.com/patterns/pinstriped-dark.png');
-            border: 1px solid var(--paper-border); 
-            padding: 25px; margin-bottom: 25px; border-radius: 2px;
-            position: relative; transition: all 0.3s ease;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.5), inset 0 0 40px rgba(89, 54, 25, 0.4);
-            transform: rotate(-0.6deg); /* 隨意釘上的感覺 */
-        }
-        .booking-card:nth-child(even) { transform: rotate(0.8deg); }
-        .booking-card:hover { transform: scale(1.02) rotate(0deg); z-index: 10; box-shadow: 10px 10px 25px rgba(0,0,0,0.6); }
-
-        /* 封蠟標籤 */
-        .mode-badge { 
-            border-radius: 3px; padding: 4px 10px; font-size: 11px; font-weight: bold; 
-            position:absolute; top:15px; right:15px; letter-spacing: 1px;
-            box-shadow: 1px 2px 4px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);
+        .main-container {
+            display: grid; grid-template-columns: 140px 1fr 340px;
+            width: 95%; height: 90%; gap: 20px; z-index: 10;
         }
 
-        /* 進度條 - 舊皮革帶 */
-        .progress-container { background: rgba(0,0,0,0.2); border-radius: 0; height: 8px; margin: 15px 0; border: 1px solid rgba(0,0,0,0.1); }
-        .progress-bar { background: #5d4037; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); transition: width 0.6s ease; }
-
-        /* 彈窗 - 大型捲軸感 */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal { 
-            background-color: #c49a6c; background-image: url('https://www.transparenttextures.com/patterns/dark-dotted-2.png');
-            width: 450px; padding: 30px; border-radius: 4px; border: 8px solid #5d4037;
-            box-shadow: 0 0 100px rgba(0,0,0,0.9); color: #2d1b0d; transform: scale(0.9); animation: modalOpen 0.3s forwards;
+        /* --- 左側：優化掛牌動效 --- */
+        .sign-post {
+            display: flex; flex-direction: column; gap: 25px; padding-top: 50px;
+            border-right: 1px solid rgba(197, 160, 89, 0.1);
         }
 
-        /* 輸入元件 */
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.08) !important; border: 1px solid #8b5a2b !important; color: #2d1b0d !important; font-family: 'Noto Serif TC', serif !important; box-sizing: border-box; }
-        button.primary { 
-            width: 100%; padding: 12px; background: #4e342e; color: #d7ccc8; border: 2px solid #26140f; 
-            font-family: 'IM Fell English SC', serif; font-weight: bold; letter-spacing: 2px;
-            box-shadow: 2px 4px 0px #1a0f06; cursor: pointer; transition: all 0.1s;
+        .wooden-sign {
+            width: 110px; padding: 18px 5px; background: linear-gradient(135deg, #3d2b1f, #2a1b0d);
+            border: 2px solid #4e342e; color: var(--paper-old);
+            text-align: center; cursor: pointer; font-size: 0.95rem; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.7); position: relative;
+            font-weight: 900;
         }
-        button.primary:active { transform: translateY(2px); box-shadow: none; }
 
-        .refresh-btn { border-color: var(--gold-old) !important; color: var(--gold-old) !important; background: transparent !important; cursor: pointer; padding: 8px 15px; font-family: 'Noto Serif TC'; }
+        .wooden-sign::before, .wooden-sign::after { 
+            content: '🔗'; position: absolute; top: -22px; font-size: 12px; opacity: 0.3;
+        }
+        .wooden-sign::before { left: 15%; } .wooden-sign::after { right: 15%; }
 
-        @keyframes slideIn { from { top: -20px; opacity: 0; } to { top: 30px; opacity: 1; } }
-        @keyframes modalOpen { to { transform: scale(1); } }
+        .wooden-sign:hover {
+            transform: rotate(-4deg) translateY(5px);
+            border-color: var(--candle-gold); color: #fff;
+            box-shadow: 0px 0px 15px var(--candle-gold);
+        }
+
+        /* --- 中央：羊皮紙與捲動條優化 --- */
+        .parchment-scroll {
+            background: var(--paper-old) url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            padding: 50px; box-shadow: inset 0 0 120px rgba(0,0,0,0.25), 10px 20px 40px rgba(0,0,0,0.8);
+            overflow-y: auto; border: 1px solid rgba(0,0,0,0.2); position: relative;
+        }
+
+        /* 自定義捲動條 */
+        .parchment-scroll::-webkit-scrollbar { width: 8px; }
+        .parchment-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .parchment-scroll::-webkit-scrollbar-thumb { background: #8b5a2b; border-radius: 4px; }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: parchmentReveal 0.6s ease-out; }
+        
+        @keyframes parchmentReveal {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 { font-family: 'Cinzel Decorative'; color: #2d1b0d; margin-top: 0; }
+        .store-title { 
+            font-size: 3.2rem; border-bottom: 3px double #8b5a2b; 
+            display: inline-block; padding-bottom: 15px; margin-bottom: 25px; 
+        }
+
+        /* 卡片與表格樣式強化 */
+        .role-card { 
+            background: rgba(0,0,0,0.04); padding: 20px; margin-bottom: 20px; 
+            border-left: 6px solid var(--wood-dark); font-size: 1rem;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .avalon-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(255,255,255,0.2); }
+        .avalon-table th { background: #5d4037; color: var(--paper-old); padding: 12px; }
+        .avalon-table td { border: 1px solid #8b5a2b; padding: 10px; text-align: center; font-weight: bold; }
+
+        /* --- 右側：皮革面板細節 --- */
+        .leather-panel {
+            background: #1a0f08 url('https://www.transparenttextures.com/patterns/dark-leather.png');
+            border: 6px solid #000; padding: 30px 20px; color: var(--paper-old);
+            display: flex; flex-direction: column; box-shadow: 15px 15px 50px rgba(0,0,0,1);
+        }
+
+        .leather-panel h3 { text-align: center; color: var(--candle-gold); border-bottom: 2px solid var(--candle-gold); padding-bottom: 15px; font-size: 1.5rem; }
+        
+        .date-grid { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; }
+        .date-chip { flex: 0 0 auto; padding: 8px 15px; background: rgba(0,0,0,0.5); border: 1px solid #4d331f; cursor: pointer; font-size: 0.85rem; }
+        .date-chip.active { background: var(--candle-gold); color: #2d1b0d; font-weight: 900; transform: scale(1.1); }
+        
+        .slot-item { background: rgba(255,255,255,0.05); border: 1px dashed #4d331f; padding: 12px; margin-bottom: 12px; text-align: center; color: #fff; font-weight: bold; }
+        .mini-quest-card { background: rgba(0,0,0,0.3); border: 1px solid #5d4037; padding: 12px; margin-top: 12px; font-size: 0.9rem; line-height: 1.5; }
+
+        .address-footer {
+            margin-top: auto; font-size: 0.85rem; border-top: 1px dashed rgba(197, 160, 89, 0.4);
+            padding-top: 20px; color: var(--candle-gold); line-height: 1.6;
+        }
+
+        .spinning { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="toast">✅ 冒險紀錄已更新</div>
+<div class="tavern-bg">
+    <div class="main-container">
+        
+        <!-- 左側導覽掛牌 -->
+        <nav class="sign-post">
+            <div class="wooden-sign" onclick="showSection('store')">據點介紹</div>
+            <div class="wooden-sign" onclick="showSection('avalon')">遠征守則</div>
+            <div class="wooden-sign" onclick="showSection('stats')">機率筆記</div>
+        </nav>
 
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 30px; border-bottom: 2px solid var(--tan-leather); padding-bottom: 15px;">
-    <div>
-        <h2 style="margin:0;">冒險者公會 <span style="font-weight:100; font-size: 0.8em; opacity: 0.7; font-family:'Noto Serif TC'">招募看板</span></h2>
-        <div id="conn-hint" style="font-size: 12px; margin-top: 5px; color: #888;">看板狀態: <span id="status-text">連線中...</span></div>
-    </div>
-    <button class="refresh-btn" onclick="manualRefresh()">
-        同步公會紀錄
-    </button>
-</div>
+        <!-- 中央羊皮紙展示區 -->
+        <main class="parchment-scroll">
+            
+            <!-- 店面介紹 -->
+            <section id="section-store" class="content-section active">
+                <p style="letter-spacing: 10px; color: var(--blood-red); font-weight: 900; font-size: 0.9rem;">EORZEA ADVENTURER TAVERN</p>
+                <h1 class="store-title">狐家桌遊店</h1>
+                <p style="line-height: 2.2; font-size: 1.15rem;">
+                    在喧囂的台南街道中，隱藏著一座專為冒險者開設的據點。這裡不只是遊玩遊戲的地方，更是交換傳聞、締結友誼的古老酒館。
+                </p>
+                <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="role-card" style="border-left-color: var(--blood-red);">
+                        <h3 style="color:var(--blood-red)">✦ 經典陣營</h3>
+                        <p>適合 5-12 人的大型聚會。在酒精與笑聲中，誰才是隱藏在人群中的背叛者？</p>
+                    </div>
+                    <div class="role-card" style="border-left-color: var(--good-blue);">
+                        <h3 style="color:var(--good-blue)">✦ 宮鬥劇本</h3>
+                        <p>獨家開發的宮鬥 TRPG。拋棄屬性數值，純粹以演技與謀略爭奪權力。</p>
+                    </div>
+                </div>
+            </section>
 
-<div id="dateSelector" style="margin-bottom: 30px; display:flex; gap:5px; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;"></div>
-<div id="operatingBoard" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;"></div>
+            <!-- 阿瓦隆規則 -->
+            <section id="section-avalon" class="content-section">
+                <h2>📜 聖杯誓約：阿瓦隆協議</h2>
+                <div class="role-card">
+                    <b style="color: var(--good-blue);">● 正義陣營</b>：完成 3 次任務，且梅林未被暗殺。<br>
+                    <b style="color: var(--blood-red);">● 邪惡陣營</b>：導致 3 次任務失敗，或成功刺殺梅林。
+                </div>
 
-<h3 style="margin-top:50px; color: var(--gold-old); font-size: 1.2em; letter-spacing: 4px; font-family: 'IM Fell English SC', serif; border-left: 5px solid var(--tan-leather); padding-left: 15px;">ACTIVE QUESTS / 招募中任務</h3>
-<div id="bookingList">正在翻閱公會日誌...</div>
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div class="role-card" style="flex: 1;">
+                        <strong>🔮 關鍵身分</strong><br>
+                        • <b>梅林</b>：看見壞人（除莫德雷德）。<br>
+                        • <b>派西維爾</b>：看見梅林與莫甘娜。
+                    </div>
+                    <div class="role-card" style="flex: 1;">
+                        <strong>🌑 邪惡勢力</strong><br>
+                        • <b>莫德雷德</b>：不被梅林看見。<br>
+                        • <b>奧伯倫</b>：壞人，但不與隊友互認。
+                    </div>
+                </div>
 
-<div id="bookingModal" class="overlay">
-    <div class="modal">
-        <h3 style="font-family:'Cinzel Decorative'; margin-top:0;">發起新的召集</h3>
-        <select id="userGame" onchange="toggleMax()">
-            <option value="阿瓦隆" data-max="10">阿瓦隆 (10人)</option>
-            <option value="TRPG" data-max="4">TRPG (4人)</option>
-            <option value="自選桌遊" data-max="6">自選桌遊 (6人)</option>
-        </select>
-        <input type="text" id="userTitle" placeholder="召集標題 (例如: 豆柴冒險團)">
-        <div style="display:flex; gap:10px; align-items: center; margin-bottom: 10px;">
-            <select id="userStartSelect" style="margin:0;"></select> 至 <select id="userEndSelect" style="margin:0;"></select>
-        </div>
-        <select id="userJoinMode">
-            <option value="true">🟢 公開召集 (開放併桌)</option>
-            <option value="false">🔒 私人聘僱 (私人團)</option>
-        </select>
-        <label style="font-size: 0.9em; color: #5d4037; font-weight: bold;">初始冒險者人數</label>
-        <select id="pCount" onchange="genInputs()"></select>
-        <div id="nameFields" style="max-height: 150px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
-        <button class="primary" onclick="confirmBooking()">送出公會申請</button>
-        <button onclick="closeModal('bookingModal')" style="width:100%; margin-top:10px; background:transparent; border: 1px solid #8b5a2b; color: #5d4037; padding: 8px; cursor:pointer;">取消</button>
-    </div>
-</div>
+                <h3>📊 遠征人力需求表</h3>
+                <table class="avalon-table">
+                    <thead>
+                        <tr><th>人數</th><th>好/壞</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>R5</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>5人</td><td>3 / 2</td><td>2</td><td>3</td><td>2</td><td>3</td><td>3</td></tr>
+                        <tr><td>7人</td><td>4 / 3</td><td>2</td><td>3</td><td>3</td><td>4*</td><td>4</td></tr>
+                        <tr><td>10人</td><td>6 / 4</td><td>3</td><td>4</td><td>4</td><td>5*</td><td>5</td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:0.85rem; color: #555;">*雙敗判定：7人以上場次，第四輪需 2 張失敗票方判定任務失敗。</p>
 
-<div id="joinModal" class="overlay">
-    <div class="modal">
-        <h3 style="font-family:'Cinzel Decorative'; margin-top:0;">申請加入冒險</h3>
-        <div id="joinFields"></div>
-        <button id="joinConfirmBtn" class="primary" style="background:var(--green-old);" onclick="confirmJoin()">確定加入</button>
-        <button onclick="closeModal('joinModal')" style="width:100%; margin-top:10px; background:transparent; border: 1px solid #8b5a2b; color: #5d4037; padding: 8px; cursor:pointer;">取消</button>
+                <div class="role-card" style="border-left-color: var(--candle-gold); background: rgba(197, 160, 89, 0.1);">
+                    <strong>🎲 FF14 運作指令庫</strong><br>
+                    • <b>領袖順位</b>：全員使用 <b style="color:#d32f2f">/dice 100</b>，點數最高者為首任領袖。<br>
+                    • <b>身分發布</b>：店長將透過 <b style="color:#d32f2f">/tell</b> 私訊告知每位玩家的身分卡。
+                </div>
+            </section>
+
+            <!-- 機率研究 -->
+            <section id="section-stats" class="content-section">
+                <h2>🧪 機率研究室：數據與煉金</h2>
+                <p style="text-align:center; margin-top:60px; font-size: 1.2rem;">
+                    正在校準 13-side 與 14-side 骰子期望值...<br><br>
+                    <span style="color: var(--blood-red); font-weight: 900;">[ 住宅區 Casino 系統 House Edge 分析中 ]</span>
+                </p>
+            </section>
+
+        </main>
+
+        <!-- 右側皮革面板 -->
+        <aside class="leather-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--candle-gold); padding-bottom:15px; margin-bottom:20px;">
+                <h3 style="margin:0; letter-spacing: 2px;">RESERVATION</h3>
+                <div id="refreshBtn" style="cursor:pointer; color:var(--candle-gold); font-size: 1.2rem;" onclick="fetchData()">🔃</div>
+            </div>
+            
+            <div id="dateSelector" class="date-grid"></div>
+            <div id="operatingBoard">正在讀取契約...</div>
+            <div id="bookingList"></div>
+
+            <div class="address-footer">
+                <strong>🗺️ 據點位置：</strong><br>
+                巴哈海霧村 14-3 號<br>
+                <strong>⏳ 營業形式：</strong><br>
+                全預約制冒險據點
+            </div>
+        </aside>
+
     </div>
 </div>
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    const SERVERS = ["伊弗利特", "利維坦", "迦樓羅", "鳳凰", "奧汀", "泰坦"];
-    let allData = [], currentViewDate = null, activeOp = null, targetBk = null;
+    let allData = [], currentViewDate = null;
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.display = 'block';
-        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+        const target = document.getElementById('section-' + sectionId);
+        if (target) target.classList.add('active');
     }
 
-    function manualRefresh() { fetchData(); showToast("🔄 正在同步公會最新紀錄..."); }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    window.handleResponse = function(data) {
-        allData = data;
-        document.getElementById('status-text').innerText = "ONLINE";
-        document.getElementById('status-text').style.color = "#2ecc71";
-        render();
-    };
-
     function fetchData() {
+        const btn = document.getElementById('refreshBtn');
+        btn.classList.add('spinning');
         const script = document.createElement('script');
         script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
         document.body.appendChild(script);
     }
 
-    function render() {
+    window.handleResponse = function(data) {
+        document.getElementById('refreshBtn').classList.remove('spinning');
+        allData = data;
         const allDates = [...new Set(allData.map(i => i.date))].filter(d => d).sort();
         if(!currentViewDate && allDates.length > 0) currentViewDate = allDates[0];
-        
-        document.getElementById('dateSelector').innerHTML = allDates.map(d => 
-            `<div class="date-tab ${currentViewDate===d?'active':''}" onclick="currentViewDate='${d}'; render();">${d}</div>`
-        ).join('');
+        renderPanel(allDates);
+    };
 
-        const slots = allData.filter(i => i.type === 'slot' && String(i.date) === String(currentViewDate));
-        const bks = allData.filter(i => i.type === 'booking' && String(i.date) === String(currentViewDate));
+    function renderPanel(allDates) {
+        const dateEl = document.getElementById('dateSelector');
+        const boardEl = document.getElementById('operatingBoard');
+        const listEl = document.getElementById('bookingList');
 
-        document.getElementById('operatingBoard').innerHTML = slots.map(o => 
-            `<div class="slot-btn" onclick="openBooking('${o.id}')">
-                <span style="font-size:0.8em; color:var(--gold-old); display:block; font-family:'Noto Serif TC'">可發起召集</span>
-                ${o.start} - ${o.end}
-            </div>`
-        ).join('') || "本日無可召集時段";
-        
-        document.getElementById('bookingList').innerHTML = bks.map(b => {
-            const isPrivate = String(b.names).includes("[私人]");
-            const nameList = String(b.names).replace("[私人] ", "").split(', ').filter(n => n);
-            const percent = Math.min((nameList.length / (parseInt(b.max) || 1)) * 100, 100);
-            const badgeBg = isPrivate ? 'var(--red-old)' : 'var(--green-old)';
-            
-            return `<div class="booking-card ${b.status}">
-                <div class="mode-badge" style="background:${badgeBg}; color:white;">${isPrivate ? 'PRIVATE' : 'OPEN'}</div>
-                <div style="color:var(--tan-leather); font-size:0.85em; margin-bottom:5px;">項目: ${b.game}</div>
-                <strong style="font-size:1.15em;">${b.title}</strong>
-                <div class="progress-container"><div class="progress-bar" style="width:${percent}%"></div></div>
-                <div style="display:flex; justify-content:space-between; font-size: 0.85em; opacity:0.9;">
-                    <span>🕒 召集時間: ${b.start}</span>
-                    <span>👥 成員: ${nameList.length} / ${b.max}人</span>
-                </div>
-                ${(b.status === 'success' && nameList.length < b.max && !isPrivate) ? 
-                    `<button class="primary" onclick="openJoin('${b.id}')" style="margin-top:15px; padding:8px; font-size:0.9em; background:var(--green-old);">加入冒險</button>` : ''}
-            </div>`;
-        }).join('') || "本日尚無冒險者發布任務";
+        if (dateEl) {
+            dateEl.innerHTML = allDates.map(d => 
+                `<div class="date-chip ${currentViewDate===d?'active':''}" onclick="updateViewDate('${d}', [${allDates.map(x=>"'"+x+"'").join(',')}])">${d}</div>`
+            ).join('');
+        }
+
+        if (boardEl) {
+            const slots = allData.filter(i => i.type === 'slot' && String(i.date) === String(currentViewDate));
+            boardEl.innerHTML = slots.map(o => `<div class="slot-item">⏳ ${o.start} - ${o.end}</div>`).join('') || "本日無預定時段";
+        }
+
+        if (listEl) {
+            const bks = allData.filter(i => i.type === 'booking' && String(i.date) === String(currentViewDate));
+            listEl.innerHTML = bks.map(b => `<div class="mini-quest-card">⚔️ <b>${b.title}</b><br>${b.start} | ${b.names}</div>`).join('') || "尚無冒險小隊";
+        }
     }
 
-    function openBooking(id) { 
-        activeOp = allData.find(i => i.id === id); 
-        const genOptions = (s, e) => { 
-            let h = "", c = new Date("2024-01-01T"+s), stop = new Date("2024-01-01T"+e); 
-            while(c <= stop) { 
-                let t = c.toTimeString().substring(0, 5); h += `<option value="${t}">${t}</option>`; 
-                c.setMinutes(c.getMinutes() + 30); 
-            } 
-            return h; 
-        }; 
-        document.getElementById('userStartSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
-        document.getElementById('userEndSelect').innerHTML = genOptions(activeOp.start, activeOp.end); 
-        document.getElementById('bookingModal').style.display = 'flex'; 
-        toggleMax(); 
-    }
-
-    function toggleMax() { 
-        const game = document.getElementById('userGame');
-        const maxVal = game.options[game.selectedIndex].getAttribute('data-max');
-        let h = ""; for(let i=1; i<=maxVal; i++) h += `<option value="${i}">${i}人</option>`; 
-        document.getElementById('pCount').innerHTML = h; 
-        genInputs(); 
-    }
-
-    function genInputs() { 
-        const count = document.getElementById('pCount').value;
-        const div = document.getElementById('nameFields'); div.innerHTML = ""; 
-        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
-        for(let i=0; i<count; i++) div.innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><select style="width:110px; margin:0;">${sOpts}</select><input type="text" placeholder="Player ID" style="margin:0;"></div>`;
-    }
-
-    function openJoin(id) { 
-        targetBk = allData.find(i => i.id === id); 
-        const sOpts = SERVERS.map(s => `<option value="${s}">${s}</option>`).join(''); 
-        document.getElementById('joinFields').innerHTML = `<div style="display:flex; gap:5px;"><select id="jServer">${sOpts}</select><input type="text" id="jName" placeholder="Player ID"></div>`; 
-        document.getElementById('joinModal').style.display = 'flex'; 
-    }
-
-    function confirmJoin() { 
-        const n = document.getElementById('jName').value.trim(); 
-        if(!n) return alert("請輸入冒險者 ID"); 
-        const newNames = targetBk.names + ", " + document.getElementById('jServer').value + "@" + n; 
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "update_names", id: targetBk.id, names: newNames }) }).then(() => { 
-            showToast("✅ 加入申請已送至公會"); closeModal('joinModal'); setTimeout(fetchData, 1500); 
-        }); 
-    }
-
-    function confirmBooking() { 
-        const names = []; 
-        document.querySelectorAll('#nameFields div').forEach(g => { 
-            const nv = g.querySelector('input').value.trim(); 
-            if(nv) names.push(g.querySelector('select').value + "@" + nv); 
-        }); 
-        if(names.length === 0) return alert("至少需要一位發起者 ID"); 
-        const game = document.getElementById('userGame');
-        const maxVal = game.options[game.selectedIndex].getAttribute('data-max');
-        const namesStr = (document.getElementById('userJoinMode').value === "false" ? "[私人] " : "") + names.join(", "); 
-        const payload = { action: "insert", data: { id: "bk_" + Date.now(), date: activeOp.date, start: document.getElementById('userStartSelect').value, end: document.getElementById('userEndSelect').value, game: game.value, title: document.getElementById('userTitle').value || "未命名冒險", names: namesStr, status: "pending", type: "booking", max: maxVal } }; 
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { 
-            showToast("🚀 召集令已發布至看板"); closeModal('bookingModal'); setTimeout(fetchData, 1500); 
-        }); 
-    }
+    window.updateViewDate = function(date, dates) {
+        currentViewDate = date;
+        renderPanel(dates);
+    };
 
     window.onload = fetchData;
-    setInterval(fetchData, 60000);
 </script>
+
 </body>
 </html>
