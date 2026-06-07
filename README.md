@@ -7,13 +7,13 @@ FF14 RP 桌遊店「光之意志」預約網站。專案目前是純靜態前端
 - `index.html`：玩家前台，可查看開放班表、建立預約、加入既有併桌。
 - `admin.html`：主持人後台，可登入、發布班表、查看預約、結束班表。
 - `adim.html`：舊後台檔名的轉址頁，會導向 `admin.html`。
-- `config.js`：Google Apps Script Web App URL 設定。
+- `config.js`：前台使用的 Google Apps Script Web App URL 設定。
 - `gas/Code.gs`：Google Apps Script 後端原始碼。
 - `data.json`：本地資料結構占位，正式流程目前以 GAS 為主。
 
 ## Google Apps Script API 契約
 
-前後台會呼叫 `config.js` 中的 `window.FF14_BOOKING_API_URL`。
+前台會呼叫 `config.js` 中的 `window.FF14_BOOKING_API_URL`。新版後台 `admin.html` 目前內含同一個 GAS Web App URL。
 
 GAS 需要設定 Script Property：
 
