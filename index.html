@@ -119,6 +119,7 @@
       border-color: var(--gold);
       box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
     }
+    textarea.field { min-height: 7rem; resize: vertical; }
     .slot-card {
       border: 1px solid var(--border-gold);
       background: linear-gradient(180deg, rgba(19, 19, 28, 0.96), rgba(10, 10, 18, 0.96));
@@ -146,6 +147,12 @@
       text-align: center;
       color: var(--text-muted);
       background: rgba(255, 255, 255, 0.03);
+    }
+    .booking-chip {
+      border: 1px solid rgba(201, 168, 76, 0.18);
+      border-radius: 1rem;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.035);
     }
   </style>
 </head>
@@ -219,31 +226,73 @@
       </div>
 
       <form id="bookingForm" class="grid gap-5">
-        <input type="hidden" id="slotId" />
-        <div class="grid md:grid-cols-2 gap-5">
+        <input type="hidden" id="shiftId" />
+        <div class="grid md:grid-cols-4 gap-5">
           <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">遊戲系統 / 桌遊</span>
-            <input id="game" class="field" maxlength="80" placeholder="例：FF14 RP、D&D、阿瓦隆" required />
+            <span class="text-sm text-gold tracking-widest">開始時間</span>
+            <input id="bookingStartTime" class="field" type="time" required />
           </label>
           <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">冒險標題</span>
-            <input id="title" class="field" maxlength="80" placeholder="例：水晶塔的秘密委託" required />
+            <span class="text-sm text-gold tracking-widest">結束時間</span>
+            <input id="bookingEndTime" class="field" type="time" required />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">遊戲</span>
+            <select id="game" class="field" required></select>
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">類型</span>
+            <select id="bookingType" class="field" required>
+              <option value="併桌">併桌</option>
+              <option value="包桌">包桌</option>
+            </select>
           </label>
         </div>
-        <div class="grid md:grid-cols-[1fr_160px] gap-5">
+        <div class="grid md:grid-cols-3 gap-5">
           <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">參與者名稱</span>
-            <input id="names" class="field" maxlength="160" placeholder="請填角色名或暱稱，可用逗號分隔" required />
+            <span class="text-sm text-gold tracking-widest">預約人數</span>
+            <input id="playerCount" class="field" type="number" min="1" max="10" value="1" required />
           </label>
           <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">人數</span>
-            <input id="max" class="field" type="number" min="1" max="8" value="4" required />
+            <span class="text-sm text-gold tracking-widest">局數</span>
+            <input id="rounds" class="field" type="number" min="1" max="12" value="1" required />
+          </label>
+          <label class="flex items-center gap-3 mt-8 text-sm text-text-muted">
+            <input id="useGem" type="checkbox" />
+            使用寶石兌換
           </label>
         </div>
+        <label class="grid gap-2">
+          <span class="text-sm text-gold tracking-widest">角色資料</span>
+          <textarea id="members" class="field" placeholder="每行一位：伺服器/角色名&#10;例：Typhon/光之冒險者" required></textarea>
+        </label>
         <button id="submitBooking" class="btn-gold rounded-full px-8 py-4 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-          送出審核
+          送出預約
         </button>
-        <p id="formHint" class="text-sm text-text-muted">主持人確認後，預約狀態會在後台更新。</p>
+        <p id="formHint" class="text-sm text-text-muted">送出後會寫入併桌團員明細；GAS 會檢查時段衝突與 30 分鐘間隔。</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- 加入併桌 -->
+  <section id="join" class="py-10 px-4 max-w-4xl mx-auto">
+    <div class="panel rounded-3xl p-6 md:p-10">
+      <div class="mb-8">
+        <span class="badge mb-4">JOIN TABLE</span>
+        <h2 class="font-cinzel text-3xl md:text-4xl font-bold gold-text mb-3">加入既有併桌</h2>
+        <p id="selectedBookingText" class="text-text-muted">請先在大廳選擇一個可加入的併桌團。</p>
+      </div>
+
+      <form id="joinForm" class="grid gap-5">
+        <input type="hidden" id="bookingId" />
+        <label class="grid gap-2">
+          <span class="text-sm text-gold tracking-widest">加入角色資料</span>
+          <textarea id="joinMembers" class="field" placeholder="每行一位：伺服器/角色名" required></textarea>
+        </label>
+        <button id="submitJoin" class="btn-gold rounded-full px-8 py-4 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
+          申請加入併桌
+        </button>
+        <p class="text-sm text-text-muted">加入人數會依角色資料行數自動計算，上限合計 10 人。</p>
       </form>
     </div>
   </section>
@@ -258,8 +307,8 @@
       </article>
       <article class="panel rounded-3xl p-6">
         <span class="badge mb-4">02</span>
-        <h3 class="text-xl font-bold gold-text mb-3">等待審核</h3>
-        <p class="text-text-muted leading-7">送出後會進入 pending 狀態，主持人可在後台通過或刪除預約契約。</p>
+        <h3 class="text-xl font-bold gold-text mb-3">填寫角色資料</h3>
+        <p class="text-text-muted leading-7">送出前請確認時間、遊戲與角色資料；系統會檢查班表範圍與預約間隔。</p>
       </article>
       <article class="panel rounded-3xl p-6">
         <span class="badge mb-4">03</span>
@@ -277,9 +326,9 @@
   <script>
     const API_URL = window.FF14_BOOKING_API_URL;
     const state = {
-      data: [],
-      selectedSlot: null,
-      loading: false
+      shifts: [],
+      selectedShift: null,
+      selectedBooking: null
     };
 
     const els = {
@@ -288,10 +337,23 @@
       lobbyNotice: document.getElementById('lobbyNotice'),
       slotList: document.getElementById('slotList'),
       selectedSlotText: document.getElementById('selectedSlotText'),
-      slotId: document.getElementById('slotId'),
+      shiftId: document.getElementById('shiftId'),
       form: document.getElementById('bookingForm'),
       submit: document.getElementById('submitBooking'),
-      formHint: document.getElementById('formHint')
+      formHint: document.getElementById('formHint'),
+      game: document.getElementById('game'),
+      bookingStartTime: document.getElementById('bookingStartTime'),
+      bookingEndTime: document.getElementById('bookingEndTime'),
+      bookingType: document.getElementById('bookingType'),
+      playerCount: document.getElementById('playerCount'),
+      rounds: document.getElementById('rounds'),
+      useGem: document.getElementById('useGem'),
+      members: document.getElementById('members'),
+      selectedBookingText: document.getElementById('selectedBookingText'),
+      bookingId: document.getElementById('bookingId'),
+      joinForm: document.getElementById('joinForm'),
+      submitJoin: document.getElementById('submitJoin'),
+      joinMembers: document.getElementById('joinMembers')
     };
 
     function scrollToSection(selector) {
@@ -303,64 +365,79 @@
       els.statusText.textContent = text;
     }
 
-    function normalizeData(data) {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === 'object') {
-        return [
-          ...Object.values(data.opSlots || {}),
-          ...Object.values(data.bookings || {})
-        ];
-      }
-      return [];
+    async function getJson(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
     }
 
-    function createId(prefix) {
-      const random = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      return `${prefix}_${random}`;
+    function getJsonp(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = `handleLobbyResponse_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement('script');
+        const timeout = window.setTimeout(() => {
+          cleanup();
+          reject(new Error('讀取資料逾時'));
+        }, 10000);
+
+        function cleanup() {
+          window.clearTimeout(timeout);
+          delete window[callbackName];
+          script.remove();
+        }
+
+        window[callbackName] = (data) => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('無法載入資料'));
+        };
+        script.src = `${url}&callback=${callbackName}`;
+        document.body.appendChild(script);
+      });
     }
 
-    function loadLobby() {
+    async function postJson(payload) {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || '操作失敗');
+      return result;
+    }
+
+    async function loadLobby() {
       if (!API_URL) {
         setStatus('offline', '尚未設定 API');
         showNotice('尚未設定 Google Apps Script API URL。');
         return;
       }
 
-      state.loading = true;
       setStatus('checking', '連線檢查中...');
       showNotice('正在讀取冒險時段...', true);
 
-      const callbackName = `handleLobbyResponse_${Date.now()}`;
-      const script = document.createElement('script');
-      const timeout = window.setTimeout(() => {
-        cleanup();
-        state.loading = false;
-        setStatus('offline', '連線逾時');
-        showNotice('讀取資料逾時，請稍後再試或聯繫主持人。');
-      }, 10000);
-
-      function cleanup() {
-        window.clearTimeout(timeout);
-        delete window[callbackName];
-        script.remove();
-      }
-
-      window[callbackName] = (data) => {
-        cleanup();
-        state.loading = false;
-        state.data = normalizeData(data);
+      const url = `${API_URL}?action=getShifts&t=${Date.now()}`;
+      try {
+        let result;
+        try {
+          result = await getJson(url);
+        } catch (error) {
+          result = await getJsonp(url);
+        }
+        if (!result.success) throw new Error(result.message || '讀取資料失敗');
+        state.shifts = Array.isArray(result.data) ? result.data : [];
         setStatus('online', '據點連線正常');
         renderSlots();
-      };
-
-      script.onerror = () => {
-        cleanup();
-        state.loading = false;
+      } catch (error) {
+        console.error(error);
         setStatus('offline', '連線失敗');
-        showNotice('無法連線到據點資料，請稍後再試。');
-      };
-      script.src = `${API_URL}?callback=${callbackName}&t=${Date.now()}`;
-      document.body.appendChild(script);
+        showNotice(`${error.message}。請確認 GAS 已部署最新版本，且 doGet 支援 action=getShifts。`);
+      }
     }
 
     function showNotice(message, withSpinner = false) {
@@ -383,26 +460,23 @@
     }
 
     function renderSlots() {
-      const slots = state.data
-        .filter((item) => item.type === 'slot' && item.status !== 'deleted')
-        .sort((a, b) => `${a.date || ''}${a.start || ''}`.localeCompare(`${b.date || ''}${b.start || ''}`));
+      const shifts = state.shifts
+        .filter((shift) => shift.status === '開放中')
+        .sort((a, b) => `${a.date || ''}${a.startTime || ''}`.localeCompare(`${b.date || ''}${b.startTime || ''}`));
 
       els.slotList.innerHTML = '';
 
-      if (!slots.length) {
+      if (!shifts.length) {
         showNotice('目前尚未開放可預約時段，請稍後再回來看看。');
         return;
       }
 
       els.lobbyNotice.hidden = true;
-      const bookings = state.data.filter((item) => item.type === 'booking' && item.status !== 'deleted');
 
-      slots.forEach((slot) => {
-        const related = bookings.filter((booking) => String(booking.slotId || '') === String(slot.id || ''));
-        const pendingCount = related.filter((booking) => booking.status === 'pending').length;
-        const successCount = related.filter((booking) => booking.status === 'success').length;
+      shifts.forEach((shift) => {
+        const bookings = Array.isArray(shift.bookings) ? shift.bookings : [];
         const card = document.createElement('article');
-        card.className = `slot-card card-hover ${state.selectedSlot?.id === slot.id ? 'selected' : ''}`;
+        card.className = `slot-card card-hover ${state.selectedShift?.shiftId === shift.shiftId ? 'selected' : ''}`;
 
         const header = document.createElement('div');
         header.className = 'flex justify-between items-start gap-4 mb-5';
@@ -410,107 +484,216 @@
         const titleWrap = document.createElement('div');
         const date = document.createElement('h3');
         date.className = 'text-2xl font-bold gold-text mb-2';
-        date.textContent = formatDate(slot.date);
+        date.textContent = formatDate(shift.date);
         const time = document.createElement('p');
         time.className = 'text-text-muted';
-        time.textContent = `${slot.start || '--:--'} - ${slot.end || '--:--'}`;
+        time.textContent = `${shift.startTime || '--:--'} - ${shift.endTime || '--:--'} / 主持人：${shift.host || '未指定'}`;
         titleWrap.append(date, time);
 
         const badge = document.createElement('span');
         badge.className = 'badge';
-        badge.textContent = slot.status === 'active' ? '開放中' : slot.status || '未標記';
+        badge.textContent = shift.status || '未標記';
         header.append(titleWrap, badge);
 
         const dots = document.createElement('div');
         dots.className = 'slot-grid mb-5';
-        const dotTotal = Math.max(4, pendingCount + successCount, 6);
+        const totalPlayers = bookings.reduce((sum, booking) => sum + Number(booking.playerCount || 0) + Number(booking.joinedCount || 0), 0);
+        const dotTotal = Math.max(6, Math.min(totalPlayers, 12));
         for (let i = 0; i < dotTotal; i += 1) {
           const dot = document.createElement('div');
           dot.className = 'slot-dot';
-          if (i < successCount) dot.classList.add('green');
-          else if (i < successCount + pendingCount) dot.classList.add('purple');
+          if (i < totalPlayers) dot.classList.add(i % 2 ? 'purple' : 'green');
           dots.appendChild(dot);
         }
 
         const meta = document.createElement('p');
         meta.className = 'text-sm text-text-muted mb-6';
-        meta.textContent = `已通過 ${successCount} 筆，待審核 ${pendingCount} 筆`;
+        meta.textContent = `可玩項目：${(shift.gamesOffered || []).join('、') || '未設定'}。目前 ${bookings.length} 團 / ${totalPlayers} 人`;
+
+        const bookingList = document.createElement('div');
+        bookingList.className = 'grid gap-3 mb-6';
+        if (bookings.length) {
+          bookings.forEach((booking) => bookingList.appendChild(renderBookingChip(shift, booking)));
+        } else {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm text-text-muted';
+          empty.textContent = '這個時段目前還沒有預約。';
+          bookingList.appendChild(empty);
+        }
 
         const button = document.createElement('button');
         button.className = 'btn-gold rounded-full px-6 py-3 tracking-widest w-full';
         button.type = 'button';
-        button.textContent = '選擇此時段';
-        button.addEventListener('click', () => selectSlot(slot));
+        button.textContent = '建立新預約';
+        button.addEventListener('click', () => selectShift(shift));
 
-        card.append(header, dots, meta, button);
+        card.append(header, dots, meta, bookingList, button);
         els.slotList.appendChild(card);
       });
     }
 
-    function selectSlot(slot) {
-      state.selectedSlot = slot;
-      els.slotId.value = slot.id || '';
+    function renderBookingChip(shift, booking) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'booking-chip';
+
+      const title = document.createElement('p');
+      title.className = 'font-bold gold-text';
+      title.textContent = `${booking.game || '未指定遊戲'} / ${booking.type || '未指定類型'}`;
+
+      const meta = document.createElement('p');
+      meta.className = 'text-sm text-text-muted';
+      const total = Number(booking.playerCount || 0) + Number(booking.joinedCount || 0);
+      meta.textContent = `${booking.startTime || '--:--'} - ${booking.endTime || '--:--'}，目前 ${total}/10 人`;
+
+      wrapper.append(title, meta);
+      if (booking.type === '併桌' && total < 10) {
+        const button = document.createElement('button');
+        button.className = 'mt-3 text-gold hover:text-gold-light text-sm';
+        button.type = 'button';
+        button.textContent = '加入此併桌';
+        button.addEventListener('click', () => selectJoinBooking(shift, booking));
+        wrapper.appendChild(button);
+      }
+      return wrapper;
+    }
+
+    function fillGameOptions(games) {
+      els.game.textContent = '';
+      games.forEach((game) => {
+        const option = document.createElement('option');
+        option.value = game;
+        option.textContent = game;
+        els.game.appendChild(option);
+      });
+    }
+
+    function selectShift(shift) {
+      state.selectedShift = shift;
+      els.shiftId.value = shift.shiftId || '';
       els.submit.disabled = false;
-      els.selectedSlotText.textContent = `${formatDate(slot.date)} ${slot.start || '--:--'} - ${slot.end || '--:--'}`;
-      els.formHint.textContent = '請填寫冒險內容，送出後會等待主持人審核。';
+      els.bookingStartTime.value = shift.startTime || '';
+      els.bookingEndTime.value = shift.endTime || '';
+      fillGameOptions(shift.gamesOffered || []);
+      els.selectedSlotText.textContent = `${formatDate(shift.date)} ${shift.startTime || '--:--'} - ${shift.endTime || '--:--'} / 主持人：${shift.host || '未指定'}`;
+      els.formHint.textContent = '請填寫預約內容，送出後會寫入併桌團員明細。';
       renderSlots();
       scrollToSection('#booking');
     }
 
+    function selectJoinBooking(shift, booking) {
+      state.selectedBooking = booking;
+      els.bookingId.value = booking.bookingId || '';
+      els.submitJoin.disabled = false;
+      els.selectedBookingText.textContent = `${formatDate(shift.date)} ${booking.startTime || '--:--'} - ${booking.endTime || '--:--'} / ${booking.game || '未指定遊戲'}`;
+      scrollToSection('#join');
+    }
+
+    function parseMembers(value) {
+      return value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [server, ...nameParts] = line.split('/');
+          return {
+            server: (server || '').trim(),
+            characterId: nameParts.join('/').trim()
+          };
+        })
+        .filter((member) => member.server && member.characterId);
+    }
+
     async function submitBooking(event) {
       event.preventDefault();
-      if (!state.selectedSlot) {
+      if (!state.selectedShift) {
         alert('請先選擇冒險時段。');
         return;
       }
 
+      const members = parseMembers(els.members.value);
+      if (!members.length) {
+        alert('請用「伺服器/角色名」格式填寫至少一位角色。');
+        return;
+      }
+
       const payload = {
-        action: 'insert',
-        data: {
-          id: createId('booking'),
-          type: 'booking',
-          status: 'pending',
-          slotId: state.selectedSlot.id || '',
-          date: state.selectedSlot.date || '',
-          start: state.selectedSlot.start || '',
-          end: state.selectedSlot.end || '',
-          game: document.getElementById('game').value.trim(),
-          title: document.getElementById('title').value.trim(),
-          names: document.getElementById('names').value.trim(),
-          max: document.getElementById('max').value,
-          createdAt: new Date().toISOString()
-        }
+        action: 'makeBooking',
+        shiftId: state.selectedShift.shiftId,
+        bookingStartTime: els.bookingStartTime.value,
+        bookingEndTime: els.bookingEndTime.value,
+        game: els.game.value,
+        type: els.bookingType.value,
+        members,
+        useGem: els.useGem.checked,
+        playerCount: Number(els.playerCount.value || members.length),
+        rounds: Number(els.rounds.value || 1)
       };
 
-      if (!payload.data.game || !payload.data.title || !payload.data.names) {
-        alert('請填寫遊戲、標題與參與者名稱。');
+      if (payload.bookingStartTime >= payload.bookingEndTime) {
+        alert('結束時間必須晚於開始時間。');
+        return;
+      }
+      if (!payload.game || !payload.type) {
+        alert('請選擇遊戲與預約類型。');
         return;
       }
 
       els.submit.disabled = true;
       els.submit.textContent = '送出中...';
       try {
-        await fetch(API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: JSON.stringify(payload)
-        });
-        alert('契約已送出，請等待主持人審核。');
+        const result = await postJson(payload);
+        alert(result.message || '預約成功');
         els.form.reset();
-        state.selectedSlot = null;
+        state.selectedShift = null;
         els.selectedSlotText.textContent = '請先在上方選擇一個開放時段。';
-        await new Promise((resolve) => window.setTimeout(resolve, 800));
-        loadLobby();
+        await loadLobby();
       } catch (error) {
         console.error(error);
-        alert('送出失敗，請稍後再試。');
+        alert(error.message || '送出失敗，請稍後再試。');
       } finally {
-        els.submit.textContent = '送出審核';
-        els.submit.disabled = !state.selectedSlot;
+        els.submit.textContent = '送出預約';
+        els.submit.disabled = !state.selectedShift;
+      }
+    }
+
+    async function submitJoin(event) {
+      event.preventDefault();
+      if (!state.selectedBooking) {
+        alert('請先選擇要加入的併桌團。');
+        return;
+      }
+
+      const members = parseMembers(els.joinMembers.value);
+      if (!members.length) {
+        alert('請用「伺服器/角色名」格式填寫至少一位角色。');
+        return;
+      }
+
+      els.submitJoin.disabled = true;
+      els.submitJoin.textContent = '送出中...';
+      try {
+        const result = await postJson({
+          action: 'joinExistingBooking',
+          bookingId: state.selectedBooking.bookingId,
+          addCount: members.length,
+          members
+        });
+        alert(result.message || '成功加入併桌');
+        els.joinForm.reset();
+        state.selectedBooking = null;
+        els.selectedBookingText.textContent = '請先在大廳選擇一個可加入的併桌團。';
+        await loadLobby();
+      } catch (error) {
+        console.error(error);
+        alert(error.message || '加入失敗，請稍後再試。');
+      } finally {
+        els.submitJoin.textContent = '申請加入併桌';
+        els.submitJoin.disabled = !state.selectedBooking;
       }
     }
 
     els.form.addEventListener('submit', submitBooking);
+    els.joinForm.addEventListener('submit', submitJoin);
     loadLobby();
   </script>
 </body>
