@@ -2,96 +2,14 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>艾奧傑亞總部 - 管理權限</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Noto+Serif+TC:wght@600&display=swap');
-        :root { --paper: #c2915e; --ink: #2d1b0d; --gold: #c5a059; --blood: #8b0000; --dark: #1a0f08; }
-        body { background: #050505 url('https://www.transparenttextures.com/patterns/dark-wood.png'); color: var(--ink); font-family: 'Noto Serif TC', serif; padding: 40px; }
-        .admin-panel { background: var(--paper); max-width: 900px; margin: 0 auto; padding: 40px; border: 4px solid var(--dark); box-shadow: 0 0 40px #000; }
-        h2 { font-family: 'Cinzel Decorative'; color: var(--blood); border-bottom: 2px solid var(--ink); text-align: center; }
-        .card { background: rgba(0,0,0,0.05); border: 1px solid var(--ink); padding: 15px; margin-top: 15px; }
-        .btn { padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; font-family: 'Cinzel Decorative'; }
-        .btn-approve { background: #2e5a88; color: white; }
-        .btn-delete { background: var(--blood); color: white; }
-        input, select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.3); border: 1px solid var(--ink); }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=admin.html">
+    <title>轉往主持人後台</title>
+    <script>
+        window.location.replace('admin.html');
+    </script>
 </head>
 <body>
-    <div class="admin-panel">
-        <h2>GUILD ADMINISTRATION</h2>
-        <div style="background:rgba(0,0,0,0.1); padding:20px; margin-bottom:30px;">
-            <h3>⚔️ 發布冒險時段</h3>
-            日期：<input type="date" id="opDate"> 
-            開始：<input type="time" id="opStart" value="18:00"> 
-            結束：<input type="time" id="opEnd" value="23:00">
-            <button class="btn btn-approve" onclick="addOp()">發布召集令</button>
-        </div>
-
-        <div id="status-hint" style="text-align:center; font-weight:bold;">📜 正在翻閱公會史冊...</div>
-        
-        <h3>待審核契約 (Pending)</h3>
-        <div id="bkList"></div>
-
-        <h3>當前開放時段 (Slots)</h3>
-        <div id="opList"></div>
-    </div>
-
-<script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    let allData = [];
-
-    function fetchData() {
-        const script = document.createElement('script');
-        script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
-        document.body.appendChild(script);
-        script.onload = () => document.body.removeChild(script);
-    }
-
-    window.handleResponse = (data) => {
-        allData = data;
-        document.getElementById('status-hint').innerText = "✅ 據點連線正常";
-        render();
-    };
-
-    function addOp() {
-        const d = document.getElementById('opDate').value;
-        if(!d) return alert("請選擇日期");
-        const payload = { action:"insert", data:{ id:"slot_"+Date.now(), date:d, start:document.getElementById('opStart').value, end:document.getElementById('opEnd').value, type:"slot", status:"active", game:"-", title:"-", names:"-", max:"-" }};
-        fetch(API_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)}).then(()=>{alert("時段已發布");fetchData();});
-    }
-
-    function approve(id) {
-        if(!confirm("確認通過此契約？")) return;
-        const target = allData.find(i => String(i.id) === String(id));
-        fetch(API_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"update", id, status:"success", names:target.names})}).then(()=>{alert("審核通過");fetchData();});
-    }
-
-    function del(id) {
-        if(!confirm("確認撕毀此紀錄？")) return;
-        fetch(API_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"delete", id})}).then(()=>{alert("已刪除");fetchData();});
-    }
-
-    function render() {
-        const bks = allData.filter(i => i.type === 'booking');
-        const slots = allData.filter(i => i.type === 'slot');
-
-        document.getElementById('bkList').innerHTML = bks.map(b => `
-            <div class="card">
-                <span style="float:right; color:var(--blood); font-weight:900;">${b.status}</span>
-                <strong>[${b.game}] ${b.title}</strong><br>
-                <small>${b.date} | ${b.start} - ${b.end} | 人數: ${b.max}</small>
-                <p>${b.names}</p>
-                ${b.status === 'pending' ? `<button class="btn btn-approve" onclick="approve('${b.id}')">通過審核</button>` : ''}
-                <button class="btn btn-delete" onclick="del('${b.id}')">刪除</button>
-            </div>`).join('') || "尚無預約";
-
-        document.getElementById('opList').innerHTML = slots.map(s => `
-            <div class="card">
-                📅 ${s.date} (${s.start} - ${s.end})
-                <button class="btn btn-delete" style="float:right; padding:5px;" onclick="del('${s.id}')">撤回</button>
-            </div>`).join('') || "尚無開放時段";
-    }
-    fetchData();
-</script>
+    <p>正在轉往主持人後台。若沒有自動跳轉，請前往 <a href="admin.html">admin.html</a>。</p>
 </body>
 </html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>艾奧傑亞總部 - 管理權限</title>
+    <script src="config.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Noto+Serif+TC:wght@600&display=swap');
+        :root { --paper: #c2915e; --ink: #2d1b0d; --gold: #c5a059; --blood: #8b0000; --dark: #1a0f08; --blue: #2e5a88; }
+        * { box-sizing: border-box; }
+        body { background: #050505 url('https://www.transparenttextures.com/patterns/dark-wood.png'); color: var(--ink); font-family: 'Noto Serif TC', serif; padding: 40px; }
+        .admin-panel { background: var(--paper); max-width: 960px; margin: 0 auto; padding: 40px; border: 4px solid var(--dark); box-shadow: 0 0 40px #000; }
+        h2 { font-family: 'Cinzel Decorative'; color: var(--blood); border-bottom: 2px solid var(--ink); text-align: center; }
+        h3 { margin-top: 28px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .toolbar a { color: var(--blood); font-weight: bold; }
+        .card { background: rgba(0,0,0,0.05); border: 1px solid var(--ink); padding: 15px; margin-top: 15px; overflow: hidden; }
+        .card-title { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+        .status { color: var(--blood); font-weight: 900; text-transform: uppercase; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .btn { padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; font-family: 'Cinzel Decorative'; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.55; }
+        .btn-approve { background: var(--blue); color: white; }
+        .btn-delete { background: var(--blood); color: white; }
+        .btn-muted { background: rgba(45, 27, 13, 0.2); color: var(--ink); }
+        input, select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.3); border: 1px solid var(--ink); }
+        .status-hint { text-align: center; font-weight: bold; background: rgba(0,0,0,0.1); padding: 14px; margin-bottom: 24px; }
+        .empty { opacity: 0.75; padding: 12px 0; }
+        .publish-box { background: rgba(0,0,0,0.1); padding: 20px; margin-bottom: 30px; }
+        @media (max-width: 720px) {
+            body { padding: 16px; }
+            .admin-panel { padding: 24px; }
+            .toolbar { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-panel">
+        <div class="toolbar">
+            <a href="index.html">← 返回前台</a>
+            <button class="btn btn-muted" id="refreshBtn" type="button">重新整理</button>
+        </div>
+        <h2>GUILD ADMINISTRATION</h2>
+        <div class="publish-box">
+            <h3>發布冒險時段</h3>
+            日期：<input type="date" id="opDate">
+            開始：<input type="time" id="opStart" value="18:00">
+            結束：<input type="time" id="opEnd" value="23:00">
+            <button class="btn btn-approve" id="addOpBtn" type="button">發布召集令</button>
+        </div>
+
+        <div id="status-hint" class="status-hint">正在翻閱公會史冊...</div>
+
+        <h3>待審核契約 (Pending)</h3>
+        <div id="bkList"></div>
+
+        <h3>當前開放時段 (Slots)</h3>
+        <div id="opList"></div>
+    </div>
+
+<script>
+    const API_URL = window.FF14_BOOKING_API_URL;
+    let allData = [];
+    let loadingTimer = null;
+
+    const statusHint = document.getElementById('status-hint');
+    const bkList = document.getElementById('bkList');
+    const opList = document.getElementById('opList');
+    const addOpBtn = document.getElementById('addOpBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    function setStatus(message) {
+        statusHint.textContent = message;
+    }
+
+    function normalizeData(data) {
+        if (Array.isArray(data)) return data;
+        if (data && typeof data === 'object') {
+            return [
+                ...Object.values(data.opSlots || {}),
+                ...Object.values(data.bookings || {})
+            ];
+        }
+        return [];
+    }
+
+    function createId(prefix) {
+        const random = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        return `${prefix}_${random}`;
+    }
+
+    function fetchData() {
+        if (!API_URL) {
+            setStatus('尚未設定 Google Apps Script API URL');
+            return;
+        }
+
+        setStatus('正在翻閱公會史冊...');
+        const callbackName = `handleAdminResponse_${Date.now()}`;
+        const script = document.createElement('script');
+        loadingTimer = window.setTimeout(() => {
+            cleanup();
+            setStatus('據點連線逾時，請稍後再試。');
+        }, 10000);
+
+        function cleanup() {
+            window.clearTimeout(loadingTimer);
+            delete window[callbackName];
+            script.remove();
+        }
+
+        window[callbackName] = (data) => {
+            cleanup();
+            allData = normalizeData(data);
+            setStatus('據點連線正常');
+            render();
+        };
+
+        script.onerror = () => {
+            cleanup();
+            setStatus('無法讀取據點資料，請確認 GAS 部署狀態。');
+        };
+        script.src = `${API_URL}?callback=${callbackName}&t=${Date.now()}`;
+        document.body.appendChild(script);
+    }
+
+    async function postAction(payload, successMessage) {
+        await fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        });
+        alert(successMessage);
+        window.setTimeout(fetchData, 800);
+    }
+
+    function addOp() {
+        const date = document.getElementById('opDate').value;
+        const start = document.getElementById('opStart').value;
+        const end = document.getElementById('opEnd').value;
+        if (!date) return alert('請選擇日期');
+        if (!start || !end) return alert('請填寫開始與結束時間');
+        if (start >= end) return alert('結束時間必須晚於開始時間');
+
+        const payload = {
+            action: 'insert',
+            data: {
+                id: createId('slot'),
+                date,
+                start,
+                end,
+                type: 'slot',
+                status: 'active',
+                game: '-',
+                title: '-',
+                names: '-',
+                max: '-',
+                createdAt: new Date().toISOString()
+            }
+        };
+        postAction(payload, '時段已發布').catch(() => alert('發布失敗，請稍後再試。'));
+    }
+
+    function approve(id) {
+        if (!confirm('確認通過此契約？')) return;
+        const target = allData.find((item) => String(item.id) === String(id));
+        if (!target) {
+            alert('找不到此筆預約，請重新整理後再試。');
+            return;
+        }
+
+        postAction({
+            action: 'update',
+            id,
+            status: 'success',
+            names: target.names || ''
+        }, '審核通過').catch(() => alert('審核失敗，請稍後再試。'));
+    }
+
+    function del(id) {
+        if (!confirm('確認撕毀此紀錄？')) return;
+        postAction({ action: 'delete', id }, '已刪除').catch(() => alert('刪除失敗，請稍後再試。'));
+    }
+
+    function appendEmpty(container, text) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = text;
+        container.appendChild(empty);
+    }
+
+    function createActionButton(label, className, handler) {
+        const button = document.createElement('button');
+        button.className = `btn ${className}`;
+        button.type = 'button';
+        button.textContent = label;
+        button.addEventListener('click', handler);
+        return button;
+    }
+
+    function renderBookingCard(booking) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'card-title';
+        const title = document.createElement('strong');
+        title.textContent = `[${booking.game || '未填遊戲'}] ${booking.title || '未命名冒險'}`;
+        const status = document.createElement('span');
+        status.className = 'status';
+        status.textContent = booking.status || 'unknown';
+        titleRow.append(title, status);
+
+        const meta = document.createElement('small');
+        meta.textContent = `${booking.date || '未指定日期'} | ${booking.start || '--:--'} - ${booking.end || '--:--'} | 人數: ${booking.max || '-'}`;
+
+        const names = document.createElement('p');
+        names.textContent = booking.names || '未填參與者';
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        if (booking.status === 'pending') {
+            actions.appendChild(createActionButton('通過審核', 'btn-approve', () => approve(booking.id)));
+        }
+        actions.appendChild(createActionButton('刪除', 'btn-delete', () => del(booking.id)));
+
+        card.append(titleRow, meta, names, actions);
+        return card;
+    }
+
+    function renderSlotCard(slot) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const title = document.createElement('strong');
+        title.textContent = `${slot.date || '未指定日期'} (${slot.start || '--:--'} - ${slot.end || '--:--'})`;
+
+        const status = document.createElement('span');
+        status.className = 'status';
+        status.style.float = 'right';
+        status.textContent = slot.status || 'unknown';
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        actions.appendChild(createActionButton('撤回', 'btn-delete', () => del(slot.id)));
+
+        card.append(status, title, actions);
+        return card;
+    }
+
+    function render() {
+        const bookings = allData
+            .filter((item) => item.type === 'booking' && item.status !== 'deleted')
+            .sort((a, b) => `${a.date || ''}${a.start || ''}`.localeCompare(`${b.date || ''}${b.start || ''}`));
+        const slots = allData
+            .filter((item) => item.type === 'slot' && item.status !== 'deleted')
+            .sort((a, b) => `${a.date || ''}${a.start || ''}`.localeCompare(`${b.date || ''}${b.start || ''}`));
+
+        bkList.textContent = '';
+        opList.textContent = '';
+
+        if (bookings.length) bookings.forEach((booking) => bkList.appendChild(renderBookingCard(booking)));
+        else appendEmpty(bkList, '尚無預約');
+
+        if (slots.length) slots.forEach((slot) => opList.appendChild(renderSlotCard(slot)));
+        else appendEmpty(opList, '尚無開放時段');
+    }
+
+    addOpBtn.addEventListener('click', addOp);
+    refreshBtn.addEventListener('click', fetchData);
+    fetchData();
+</script>
+</body>
+</html>

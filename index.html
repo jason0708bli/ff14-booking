@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>光之意志桌遊酒館 ─ FF14 RP 桌遊店</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
@@ -32,13 +33,13 @@
     }
     .font-cinzel { font-family: 'Cinzel', serif; }
     .gold-text { color: var(--gold); }
-    
+
     /* 星空背景 */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background-image: 
+      background-image:
         radial-gradient(1px 1px at 10% 10%, #fff, transparent),
         radial-gradient(1px 1px at 20% 50%, #fff, transparent),
         radial-gradient(2px 2px at 40% 80%, #fff, transparent),
@@ -68,6 +69,17 @@
     .spinner { width: 24px; height: 24px; border: 3px solid rgba(201,168,76,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .text-gold { color: var(--gold); }
+    .text-gold-light { color: var(--gold-light); }
+    .text-text-muted { color: var(--text-muted); }
+    .bg-bg-deep\/80 { background-color: rgba(10, 10, 18, 0.8); }
+    .border-gold\/10 { border-color: rgba(201, 168, 76, 0.1); }
+    .border-gold\/40 { border-color: rgba(201, 168, 76, 0.4); }
+    .border-gold\/50 { border-color: rgba(201, 168, 76, 0.5); }
+    .hover\:text-gold:hover { color: var(--gold); }
+    .hover\:text-gold-light:hover { color: var(--gold-light); }
+    .hover\:bg-gold\/10:hover { background-color: rgba(201, 168, 76, 0.1); }
+
     /* 連線狀態指示燈 */
     .status-indicator {
       display: inline-flex;
@@ -88,6 +100,53 @@
     .status-checking { color: #c9a84c; border-color: rgba(201,168,76,0.3); }
     .status-checking .status-dot-inner { background: #c9a84c; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+    .panel {
+      background: rgba(19, 19, 28, 0.88);
+      border: 1px solid var(--border-gold);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .field {
+      width: 100%;
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1rem;
+      outline: none;
+    }
+    .field:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+    }
+    .slot-card {
+      border: 1px solid var(--border-gold);
+      background: linear-gradient(180deg, rgba(19, 19, 28, 0.96), rgba(10, 10, 18, 0.96));
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+    }
+    .slot-card.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.14), 0 18px 40px rgba(201, 168, 76, 0.12);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      color: var(--gold-light);
+      background: rgba(201, 168, 76, 0.08);
+    }
+    .empty-state {
+      border: 1px dashed rgba(201, 168, 76, 0.25);
+      border-radius: 1.5rem;
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+    }
   </style>
 </head>
 <body>
@@ -124,8 +183,8 @@
         在星辰交織的酒館中，開啟屬於您的冒險棋局
       </p>
       <div class="flex flex-col md:flex-row gap-6 justify-center">
-        <button onclick="scrollTo('#lobby')" class="btn-gold px-12 py-4 rounded-full text-lg tracking-widest">立即預約冒險</button>
-        <button onclick="scrollTo('#rules')" class="border border-gold/50 text-gold px-12 py-4 rounded-full text-lg tracking-widest hover:bg-gold/10 transition-all">冒險須知</button>
+        <button onclick="scrollToSection('#lobby')" class="btn-gold px-12 py-4 rounded-full text-lg tracking-widest">立即預約冒險</button>
+        <button onclick="scrollToSection('#rules')" class="border border-gold/50 text-gold px-12 py-4 rounded-full text-lg tracking-widest hover:bg-gold/10 transition-all">冒險須知</button>
       </div>
     </div>
   </section>
@@ -142,3 +201,317 @@
         <span class="tracking-widest">重新整理大廳</span>
       </button>
     </div>
+
+    <div id="lobbyNotice" class="empty-state">
+      <div class="spinner mx-auto mb-4"></div>
+      正在讀取冒險時段...
+    </div>
+    <div id="slotList" class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- 預約表單 -->
+  <section id="booking" class="py-20 px-4 max-w-4xl mx-auto">
+    <div class="panel rounded-3xl p-6 md:p-10">
+      <div class="mb-8">
+        <span class="badge mb-4">BOOKING REQUEST</span>
+        <h2 class="font-cinzel text-3xl md:text-4xl font-bold gold-text mb-3">提交冒險契約</h2>
+        <p id="selectedSlotText" class="text-text-muted">請先在上方選擇一個開放時段。</p>
+      </div>
+
+      <form id="bookingForm" class="grid gap-5">
+        <input type="hidden" id="slotId" />
+        <div class="grid md:grid-cols-2 gap-5">
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">遊戲系統 / 桌遊</span>
+            <input id="game" class="field" maxlength="80" placeholder="例：FF14 RP、D&D、阿瓦隆" required />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">冒險標題</span>
+            <input id="title" class="field" maxlength="80" placeholder="例：水晶塔的秘密委託" required />
+          </label>
+        </div>
+        <div class="grid md:grid-cols-[1fr_160px] gap-5">
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">參與者名稱</span>
+            <input id="names" class="field" maxlength="160" placeholder="請填角色名或暱稱，可用逗號分隔" required />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm text-gold tracking-widest">人數</span>
+            <input id="max" class="field" type="number" min="1" max="8" value="4" required />
+          </label>
+        </div>
+        <button id="submitBooking" class="btn-gold rounded-full px-8 py-4 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
+          送出審核
+        </button>
+        <p id="formHint" class="text-sm text-text-muted">主持人確認後，預約狀態會在後台更新。</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- 冒險須知 -->
+  <section id="rules" class="py-20 px-4 max-w-5xl mx-auto">
+    <div class="grid md:grid-cols-3 gap-6">
+      <article class="panel rounded-3xl p-6">
+        <span class="badge mb-4">01</span>
+        <h3 class="text-xl font-bold gold-text mb-3">先選時段</h3>
+        <p class="text-text-muted leading-7">請從大廳挑選仍開放的冒險時段，再填寫想遊玩的系統、主題與參與者。</p>
+      </article>
+      <article class="panel rounded-3xl p-6">
+        <span class="badge mb-4">02</span>
+        <h3 class="text-xl font-bold gold-text mb-3">等待審核</h3>
+        <p class="text-text-muted leading-7">送出後會進入 pending 狀態，主持人可在後台通過或刪除預約契約。</p>
+      </article>
+      <article class="panel rounded-3xl p-6">
+        <span class="badge mb-4">03</span>
+        <h3 class="text-xl font-bold gold-text mb-3">準時赴約</h3>
+        <p class="text-text-muted leading-7">若臨時需要變更，請盡早聯繫店家或主持人，以便釋出時段給其他冒險者。</p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="py-10 text-center text-sm text-text-muted">
+    <p class="font-cinzel tracking-[0.35em] text-gold mb-2">WILL OF LIGHT</p>
+    <p>FF14 RP 桌遊酒館預約系統</p>
+  </footer>
+
+  <script>
+    const API_URL = window.FF14_BOOKING_API_URL;
+    const state = {
+      data: [],
+      selectedSlot: null,
+      loading: false
+    };
+
+    const els = {
+      connectionStatus: document.getElementById('connectionStatus'),
+      statusText: document.getElementById('statusText'),
+      lobbyNotice: document.getElementById('lobbyNotice'),
+      slotList: document.getElementById('slotList'),
+      selectedSlotText: document.getElementById('selectedSlotText'),
+      slotId: document.getElementById('slotId'),
+      form: document.getElementById('bookingForm'),
+      submit: document.getElementById('submitBooking'),
+      formHint: document.getElementById('formHint')
+    };
+
+    function scrollToSection(selector) {
+      document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function setStatus(status, text) {
+      els.connectionStatus.className = `status-indicator status-${status}`;
+      els.statusText.textContent = text;
+    }
+
+    function normalizeData(data) {
+      if (Array.isArray(data)) return data;
+      if (data && typeof data === 'object') {
+        return [
+          ...Object.values(data.opSlots || {}),
+          ...Object.values(data.bookings || {})
+        ];
+      }
+      return [];
+    }
+
+    function createId(prefix) {
+      const random = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      return `${prefix}_${random}`;
+    }
+
+    function loadLobby() {
+      if (!API_URL) {
+        setStatus('offline', '尚未設定 API');
+        showNotice('尚未設定 Google Apps Script API URL。');
+        return;
+      }
+
+      state.loading = true;
+      setStatus('checking', '連線檢查中...');
+      showNotice('正在讀取冒險時段...', true);
+
+      const callbackName = `handleLobbyResponse_${Date.now()}`;
+      const script = document.createElement('script');
+      const timeout = window.setTimeout(() => {
+        cleanup();
+        state.loading = false;
+        setStatus('offline', '連線逾時');
+        showNotice('讀取資料逾時，請稍後再試或聯繫主持人。');
+      }, 10000);
+
+      function cleanup() {
+        window.clearTimeout(timeout);
+        delete window[callbackName];
+        script.remove();
+      }
+
+      window[callbackName] = (data) => {
+        cleanup();
+        state.loading = false;
+        state.data = normalizeData(data);
+        setStatus('online', '據點連線正常');
+        renderSlots();
+      };
+
+      script.onerror = () => {
+        cleanup();
+        state.loading = false;
+        setStatus('offline', '連線失敗');
+        showNotice('無法連線到據點資料，請稍後再試。');
+      };
+      script.src = `${API_URL}?callback=${callbackName}&t=${Date.now()}`;
+      document.body.appendChild(script);
+    }
+
+    function showNotice(message, withSpinner = false) {
+      els.slotList.innerHTML = '';
+      els.lobbyNotice.hidden = false;
+      els.lobbyNotice.textContent = '';
+      if (withSpinner) {
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner mx-auto mb-4';
+        els.lobbyNotice.appendChild(spinner);
+      }
+      els.lobbyNotice.appendChild(document.createTextNode(message));
+    }
+
+    function formatDate(date) {
+      if (!date) return '未指定日期';
+      const parsed = new Date(`${date}T00:00:00`);
+      if (Number.isNaN(parsed.getTime())) return date;
+      return parsed.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'short' });
+    }
+
+    function renderSlots() {
+      const slots = state.data
+        .filter((item) => item.type === 'slot' && item.status !== 'deleted')
+        .sort((a, b) => `${a.date || ''}${a.start || ''}`.localeCompare(`${b.date || ''}${b.start || ''}`));
+
+      els.slotList.innerHTML = '';
+
+      if (!slots.length) {
+        showNotice('目前尚未開放可預約時段，請稍後再回來看看。');
+        return;
+      }
+
+      els.lobbyNotice.hidden = true;
+      const bookings = state.data.filter((item) => item.type === 'booking' && item.status !== 'deleted');
+
+      slots.forEach((slot) => {
+        const related = bookings.filter((booking) => String(booking.slotId || '') === String(slot.id || ''));
+        const pendingCount = related.filter((booking) => booking.status === 'pending').length;
+        const successCount = related.filter((booking) => booking.status === 'success').length;
+        const card = document.createElement('article');
+        card.className = `slot-card card-hover ${state.selectedSlot?.id === slot.id ? 'selected' : ''}`;
+
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-start gap-4 mb-5';
+
+        const titleWrap = document.createElement('div');
+        const date = document.createElement('h3');
+        date.className = 'text-2xl font-bold gold-text mb-2';
+        date.textContent = formatDate(slot.date);
+        const time = document.createElement('p');
+        time.className = 'text-text-muted';
+        time.textContent = `${slot.start || '--:--'} - ${slot.end || '--:--'}`;
+        titleWrap.append(date, time);
+
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = slot.status === 'active' ? '開放中' : slot.status || '未標記';
+        header.append(titleWrap, badge);
+
+        const dots = document.createElement('div');
+        dots.className = 'slot-grid mb-5';
+        const dotTotal = Math.max(4, pendingCount + successCount, 6);
+        for (let i = 0; i < dotTotal; i += 1) {
+          const dot = document.createElement('div');
+          dot.className = 'slot-dot';
+          if (i < successCount) dot.classList.add('green');
+          else if (i < successCount + pendingCount) dot.classList.add('purple');
+          dots.appendChild(dot);
+        }
+
+        const meta = document.createElement('p');
+        meta.className = 'text-sm text-text-muted mb-6';
+        meta.textContent = `已通過 ${successCount} 筆，待審核 ${pendingCount} 筆`;
+
+        const button = document.createElement('button');
+        button.className = 'btn-gold rounded-full px-6 py-3 tracking-widest w-full';
+        button.type = 'button';
+        button.textContent = '選擇此時段';
+        button.addEventListener('click', () => selectSlot(slot));
+
+        card.append(header, dots, meta, button);
+        els.slotList.appendChild(card);
+      });
+    }
+
+    function selectSlot(slot) {
+      state.selectedSlot = slot;
+      els.slotId.value = slot.id || '';
+      els.submit.disabled = false;
+      els.selectedSlotText.textContent = `${formatDate(slot.date)} ${slot.start || '--:--'} - ${slot.end || '--:--'}`;
+      els.formHint.textContent = '請填寫冒險內容，送出後會等待主持人審核。';
+      renderSlots();
+      scrollToSection('#booking');
+    }
+
+    async function submitBooking(event) {
+      event.preventDefault();
+      if (!state.selectedSlot) {
+        alert('請先選擇冒險時段。');
+        return;
+      }
+
+      const payload = {
+        action: 'insert',
+        data: {
+          id: createId('booking'),
+          type: 'booking',
+          status: 'pending',
+          slotId: state.selectedSlot.id || '',
+          date: state.selectedSlot.date || '',
+          start: state.selectedSlot.start || '',
+          end: state.selectedSlot.end || '',
+          game: document.getElementById('game').value.trim(),
+          title: document.getElementById('title').value.trim(),
+          names: document.getElementById('names').value.trim(),
+          max: document.getElementById('max').value,
+          createdAt: new Date().toISOString()
+        }
+      };
+
+      if (!payload.data.game || !payload.data.title || !payload.data.names) {
+        alert('請填寫遊戲、標題與參與者名稱。');
+        return;
+      }
+
+      els.submit.disabled = true;
+      els.submit.textContent = '送出中...';
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload)
+        });
+        alert('契約已送出，請等待主持人審核。');
+        els.form.reset();
+        state.selectedSlot = null;
+        els.selectedSlotText.textContent = '請先在上方選擇一個開放時段。';
+        await new Promise((resolve) => window.setTimeout(resolve, 800));
+        loadLobby();
+      } catch (error) {
+        console.error(error);
+        alert('送出失敗，請稍後再試。');
+      } finally {
+        els.submit.textContent = '送出審核';
+        els.submit.disabled = !state.selectedSlot;
+      }
+    }
+
+    els.form.addEventListener('submit', submitBooking);
+    loadLobby();
+  </script>
+</body>
+</html>
