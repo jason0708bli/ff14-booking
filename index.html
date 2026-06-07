@@ -1,296 +1,144 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <title>狐家桌遊店 - 艾奧傑亞據點</title>
-    <style>
-        /* 嚴格回歸 2.0 的字體與配色 */
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Noto+Serif+TC:wght@600;900&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>光之意志桌遊酒館 ─ FF14 RP 桌遊店</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #f0d080;
+      --gold-dark: #8a6a1e;
+      --blue-gem: #4090d0;
+      --red-gem: #d04050;
+      --purple-gem: #9060c0;
+      --bg-deep: #0a0a12;
+      --bg-card: #13131c;
+      --border-gold: rgba(201,168,76,0.3);
+      --text-main: #e8dfc8;
+      --text-muted: #7a7060;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .font-cinzel { font-family: 'Cinzel', serif; }
+    .gold-text { color: var(--gold); }
+    
+    /* 星空背景 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(1px 1px at 10% 10%, #fff, transparent),
+        radial-gradient(1px 1px at 20% 50%, #fff, transparent),
+        radial-gradient(2px 2px at 40% 80%, #fff, transparent),
+        radial-gradient(1px 1px at 60% 20%, #fff, transparent),
+        radial-gradient(2px 2px at 80% 40%, #fff, transparent),
+        radial-gradient(1px 1px at 90% 70%, #fff, transparent);
+      background-size: 1000px 1000px;
+      opacity: 0.15;
+      z-index: -1;
+    }
 
-        :root {
-            --paper-base: #c2915e;
-            --burnt-edge: #2b1a0a;
-            --ink-color: #2d1b0d;
-            --gold-accent: #c5a059;
-            --ember-color: #ff9d00;
-            --blood-red: #8b0000;
-            --leather-dark: #1a0f08;
-        }
+    /* 燈號格子 */
+    .slot-grid { display: flex; gap: 4px; margin-top: 8px; }
+    .slot-dot { width: 12px; height: 12px; border-radius: 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+    .slot-dot.green { background: #4ade80; box-shadow: 0 0 8px #4ade80; border: none; }
+    .slot-dot.purple { background: #a855f7; box-shadow: 0 0 8px #a855f7; border: none; }
 
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #050505; color: var(--ink-color); font-family: 'Noto Serif TC', serif; overflow: hidden; }
+    /* 下拉選單修正 */
+    select option { background-color: var(--bg-deep); color: white; }
 
-        /* 環境與餘燼 */
-        .tavern-environment {
-            position: relative; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.1) 0%, transparent 80%),
-                        url('https://www.transparenttextures.com/patterns/dark-wood.png'), #000;
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-            animation: candleFlicker 4s infinite alternate;
-        }
-        @keyframes candleFlicker { 0% { opacity: 0.93; } 100% { opacity: 1; } }
+    /* 其他樣式 */
+    .hero-gradient { background: linear-gradient(to bottom, transparent, var(--bg-deep)); }
+    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px); border-color: var(--gold); box-shadow: 0 10px 30px -10px rgba(201,168,76,0.3); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: #000; font-weight: 700; transition: all 0.3s; }
+    .btn-gold:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(201,168,76,0.4); }
+    .spinner { width: 24px; height: 24px; border: 3px solid rgba(201,168,76,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        .fire-pit { position: absolute; bottom: -50px; left: 0; width: 100%; height: 200px; z-index: 2; pointer-events: none; }
-        .ember { position: absolute; background-color: var(--ember-color); border-radius: 50%; opacity: 0; mix-blend-mode: screen; animation: rise 7s infinite ease-in; box-shadow: 0 0 10px 2px rgba(255, 120, 0, 0.8); }
-        @keyframes rise { 0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-110vh) scale(0.3) rotate(360deg); opacity: 0; } }
-
-        .main-container { display: grid; grid-template-columns: 160px 1fr 340px; width: 96%; height: 92%; gap: 20px; z-index: 10; position: relative; }
-
-        /* 導覽木牌 */
-        .wooden-sign {
-            width: 130px; padding: 15px 5px; background: linear-gradient(135deg, #3d2b1f, #1a0f08);
-            border: 1px solid #5d4037; color: #d2a679; text-align: center; cursor: pointer; 
-            font-size: 0.95rem; font-weight: 900; transition: 0.4s; position: relative;
-            clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
-            margin-bottom: 20px;
-        }
-        .wooden-sign.active-sign { color: white; border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); transform: scale(1.05); }
-        .wooden-sign:hover { transform: rotate(-3deg) translateX(5px); color: white; }
-
-        /* 卷軸內容 */
-        .parchment-scroll {
-            background-color: var(--paper-base);
-            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png'), radial-gradient(ellipse at center, transparent 30%, rgba(43, 26, 10, 0.7) 100%);
-            padding: 60px 80px; overflow-y: auto; box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
-            filter: drop-shadow(10px 10px 20px rgba(0,0,0,0.9));
-            clip-path: polygon(0% 15%, 2% 5%, 15% 0%, 25% 4%, 40% 1%, 55% 5%, 70% 2%, 85% 6%, 98% 3%, 100% 15%, 97% 30%, 100% 45%, 96% 60%, 100% 75%, 98% 90%, 95% 98%, 80% 95%, 65% 100%, 50% 97%, 35% 100%, 20% 96%, 5% 99%, 0% 85%, 3% 70%, 0% 55%, 4% 40%, 1% 25%);
-        }
-        .content-section { display: none; }
-        .content-section.active { display: block; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* 右側皮革面板 */
-        .leather-panel { background: var(--leather-dark) url('https://www.transparenttextures.com/patterns/dark-leather.png'); border: 8px solid #000; padding: 25px 15px; color: var(--paper-base); display: flex; flex-direction: column; box-shadow: 10px 0 30px #000; overflow-y: auto; }
-        .mini-quest-card { background: #e6c9a8; color: var(--ink-color); padding: 12px; margin-bottom: 12px; border-left: 5px solid var(--blood-red); box-shadow: 5px 5px 15px rgba(0,0,0,0.5); }
-        .slot-item { border: 1px dashed var(--gold-accent); padding: 12px; margin-bottom: 10px; text-align: center; cursor: pointer; color: #fff; font-weight: bold; }
-        .slot-item:hover { background: var(--gold-accent); color: #000; }
-        .join-btn { background: #2e5a88; color: white; border: none; padding: 8px; width: 100%; cursor: pointer; font-weight: 900; margin-top: 10px; clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%); }
-
-        /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; justify-content: center; align-items: center; }
-        .modal-paper { background: #d4a76a url('https://www.transparenttextures.com/patterns/pinstriped-dark.png'); width: 480px; max-height: 85vh; overflow-y: auto; padding: 40px; border: 2px solid #5d4037; position: relative; box-shadow: 0 0 50px #000; }
-        .form-group { margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px; }
-        .form-group label { display: block; font-weight: 900; color: var(--blood-red); margin-bottom: 5px; }
-        select, input { width: 100%; padding: 10px; background: rgba(255,255,255,0.25); border: 1px solid var(--burnt-edge); font-family: inherit; font-weight: bold; box-sizing: border-box; }
-        .player-row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-bottom: 8px; }
-        .btn-submit { width: 100%; padding: 15px; background: var(--blood-red); color: white; border: none; cursor: pointer; font-weight: 900; letter-spacing: 2px; margin-top: 20px; }
-    </style>
+    /* 連線狀態指示燈 */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .status-dot-inner { width: 8px; height: 8px; border-radius: 50%; }
+    .status-online { color: #50c878; border-color: rgba(80,200,120,0.3); }
+    .status-online .status-dot-inner { background: #50c878; box-shadow: 0 0 8px #50c878; }
+    .status-offline { color: #e05050; border-color: rgba(224,80,80,0.3); }
+    .status-offline .status-dot-inner { background: #e05050; box-shadow: 0 0 8px #e05050; }
+    .status-checking { color: #c9a84c; border-color: rgba(201,168,76,0.3); }
+    .status-checking .status-dot-inner { background: #c9a84c; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+  </style>
 </head>
 <body>
-
-<div class="tavern-environment">
-    <div class="fire-pit" id="firePit"></div>
-    <div class="main-container">
-        <nav class="sign-post">
-            <div class="wooden-sign" id="btn-store" onclick="showSection('store')">據點介紹</div>
-            <div class="wooden-sign" id="btn-crystal" onclick="showSection('crystal')">水晶商會</div>
-            <div class="wooden-sign" id="btn-avalon" onclick="showSection('avalon')">遠征守則</div>
-            <div class="wooden-sign" id="btn-arthur" onclick="showSection('arthur')">亞瑟傳奇</div>
-        </nav>
-
-        <main class="parchment-scroll">
-            <section id="section-store" class="content-section active">
-                <p style="letter-spacing: 5px; color: var(--blood-red); font-weight: 900; margin: 0;">EORZEA ADVENTURER TAVERN</p>
-                <h1 style="font-family: 'Cinzel Decorative'; font-size: 2.8rem; border-bottom: 3px solid var(--burnt-edge); margin-bottom: 20px; display: inline-block;">狐家桌遊店</h1>
-                <p style="font-size: 1.2rem; line-height: 2;">歡迎回到據點，冒險者。在這裡，每一場對局都是一段史詩。</p>
-            </section>
-            <section id="section-crystal" class="content-section"><h1>水晶商會</h1><p>璀璨寶石的交易規則...</p></section>
-            <section id="section-avalon" class="content-section"><h1>遠征守則</h1><p>正義與邪惡的博弈...</p></section>
-            <section id="section-arthur" class="content-section"><h1>亞瑟傳奇</h1><p>快速遠征的秘密...</p></section>
-        </main>
-
-        <aside class="leather-panel">
-            <h3 style="font-family: 'Cinzel Decorative'; border-bottom: 1px solid var(--gold-accent);">RESERVATIONS</h3>
-            <div id="dateSelector" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:15px; margin-bottom:10px;"></div>
-            <div id="operatingBoard"></div>
-            <hr style="border-color: rgba(255,255,255,0.1);">
-            <div id="bookingList"></div>
-            <div id="refreshStatus" style="margin-top:auto; text-align:center; opacity:0.5; font-size:0.7rem;">連線正常</div>
-        </aside>
-    </div>
-</div>
-
-<div id="bookingModal" class="modal">
-    <div class="modal-paper">
-        <span style="position:absolute; right:20px; top:10px; cursor:pointer; font-size:1.5rem;" onclick="closeModal('bookingModal')">✕</span>
-        <h2 style="text-align:center; font-family: 'Cinzel Decorative';">📜 冒險預約契約</h2>
-        <div class="form-group">
-            <label>⚔️ 選擇遊戲</label>
-            <select id="formGame" onchange="handleGameChange()">
-                <option value="阿瓦隆">阿瓦隆</option>
-                <option value="亞瑟王傳奇(Quest)">亞瑟王傳奇(Quest)</option>
-                <option value="水晶商會(璀璨寶石)">水晶商會(璀璨寶石)</option>
-            </select>
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-deep/80 backdrop-blur-md border-b border-gold/10 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="font-cinzel text-gold font-bold tracking-widest">WILL OF LIGHT</div>
+      <div class="flex items-center gap-4">
+        <!-- 連線狀態指示 -->
+        <div id="connectionStatus" class="status-indicator status-checking">
+          <div class="status-dot-inner"></div>
+          <span id="statusText">連線檢查中...</span>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-            <div class="form-group"><label>⌛ 起始時間</label><select id="formStart"></select></div>
-            <div class="form-group"><label>⌛ 結束時間</label><select id="formEnd"></select></div>
-        </div>
-        <div class="form-group"><label>👥 冒險人數</label><select id="formMax" onchange="renderPlayerInputs()"></select></div>
-        <div id="playerInputsContainer" style="max-height: 200px; overflow-y: auto;"></div>
-        <div class="form-group" style="margin-top:15px;">
-            <label>📜 狀態</label>
-            <select id="formStatus"><option value="自成團">私密：自成團</option><option value="開放併桌">公開：開放併桌</option></select>
-        </div>
-        <input type="text" id="formTitle" placeholder="團名 / 委託暗語">
-        <button class="btn-submit" onclick="submitBooking()">簽署並發送契約</button>
+        <a href="admin.html" class="text-xs text-text-muted hover:text-gold transition-colors">主持人後台</a>
+      </div>
     </div>
-</div>
+  </nav>
 
-<div id="joinModal" class="modal">
-    <div class="modal-paper" style="width:400px;">
-        <span style="position:absolute; right:20px; top:10px; cursor:pointer;" onclick="closeModal('joinModal')">✕</span>
-        <h2 style="text-align:center;">🖋️ 併桌申請書</h2>
-        <p id="joinInfo" style="text-align:center; color:var(--blood-red); font-weight:bold;"></p>
-        <div class="form-group"><label>您的伺服器</label><select id="joinServer"></select></div>
-        <div class="form-group"><label>名字</label><input type="text" id="joinName" placeholder="請輸入冒險者名稱"></div>
-        <button class="btn-submit" style="background:#2e5a88;" onclick="submitJoin()">確認加入</button>
+  <!-- Hero Section -->
+  <section class="relative h-screen flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+      <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent opacity-60"></div>
+      <div class="absolute inset-0 hero-gradient"></div>
     </div>
-</div>
+    <div class="relative z-10 text-center px-4">
+      <div class="mb-6 inline-block border-y border-gold/40 py-2 px-8">
+        <span class="font-cinzel tracking-[0.5em] text-gold text-sm md:text-base">EST. 2024 ─ EOZEA</span>
+      </div>
+      <h1 class="font-cinzel text-5xl md:text-8xl font-black mb-6 tracking-tighter">
+        <span class="block text-white opacity-90">WILL OF LIGHT</span>
+        <span class="block gold-text mt-2">光之意志</span>
+      </h1>
+      <p class="text-lg md:text-2xl text-text-muted mb-12 max-w-2xl mx-auto leading-relaxed font-light tracking-widest">
+        在星辰交織的酒館中，開啟屬於您的冒險棋局
+      </p>
+      <div class="flex flex-col md:flex-row gap-6 justify-center">
+        <button onclick="scrollTo('#lobby')" class="btn-gold px-12 py-4 rounded-full text-lg tracking-widest">立即預約冒險</button>
+        <button onclick="scrollTo('#rules')" class="border border-gold/50 text-gold px-12 py-4 rounded-full text-lg tracking-widest hover:bg-gold/10 transition-all">冒險須知</button>
+      </div>
+    </div>
+  </section>
 
-<script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwNCsVr993_vYwObLyu2ftHEkpP54CYFg72-K3PGG4Hyt4ibuEglsVWoSDJ5Op71fooeQ/exec";
-    const SERVERS = ["伊弗利特@", "利維坦@", "迦樓羅@", "鳳凰@", "巴哈姆特@", "奧汀@", "泰坦@"];
-    let allData = [], currentViewDate = null, selectedSlot = null, currentJoinId = null;
-
-    // 特效與分頁邏輯
-    function createEmbers() {
-        const pit = document.getElementById('firePit');
-        for(let i=0; i<25; i++) {
-            const e = document.createElement('div');
-            e.className = 'ember';
-            e.style.width = e.style.height = (Math.random()*4+2)+'px';
-            e.style.left = Math.random()*100+'%';
-            e.style.animationDelay = (Math.random()*7)+'s';
-            pit.appendChild(e);
-        }
-    }
-
-    function showSection(id) {
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.wooden-sign').forEach(b => b.classList.remove('active-sign'));
-        document.getElementById('section-' + id).classList.add('active');
-        document.getElementById('btn-' + id).classList.add('active-sign');
-    }
-
-    // 資料處理核心
-    function fetchData() {
-        const script = document.createElement('script');
-        script.src = `${API_URL}?callback=handleResponse&t=${Date.now()}`;
-        document.body.appendChild(script);
-        script.onload = () => document.body.removeChild(script);
-    }
-
-    window.handleResponse = (data) => {
-        allData = data;
-        const dates = [...new Set(allData.filter(i => i.date).map(i => i.date))].sort();
-        if(!currentViewDate && dates.length > 0) currentViewDate = dates[0];
-        
-        document.getElementById('dateSelector').innerHTML = dates.map(d => `
-            <div class="wooden-sign ${d === currentViewDate ? 'active-sign' : ''}" 
-                 style="width:70px; padding:5px; margin:0; flex-shrink:0;" 
-                 onclick="currentViewDate='${d}';renderPanel()">
-                 ${d.slice(5)}
-            </div>`).join('');
-        renderPanel();
-    };
-
-    function renderPanel() {
-        const slots = allData.filter(i => i.type === 'slot' && i.date === currentViewDate);
-        document.getElementById('operatingBoard').innerHTML = slots.map(o => `
-            <div class="slot-item" onclick="openBooking('${o.id}')">⚔️ 召集：${o.start}-${o.end}</div>
-        `).join('') || "<p style='text-align:center; opacity:0.5;'>本日無召集</p>";
-
-        const bks = allData.filter(i => i.type === 'booking' && i.date === currentViewDate && i.status === 'success');
-        document.getElementById('bookingList').innerHTML = "<h3 style='font-size:0.9rem; color:var(--gold-accent);'>已確認委託</h3>" + 
-            bks.map(b => `
-                <div class="mini-quest-card">
-                    <b>[${b.game}] ${b.title}</b><br><small>${b.start} | 人數:${b.max}</small>
-                    ${b.title.includes('開放併桌') ? `<button class="join-btn" onclick="openJoin('${b.id}', '${b.game}', '${b.title}')">加入冒險</button>` : ''}
-                </div>
-            `).join('') || "<p style='text-align:center; opacity:0.5;'>尚無委託</p>";
-    }
-
-    // Modal 與 表單邏輯
-    function handleGameChange() {
-        const game = document.getElementById('formGame').value;
-        const maxSelect = document.getElementById('formMax');
-        maxSelect.innerHTML = "";
-        let min = (game.includes("水晶")) ? 2 : 5;
-        let max = (game.includes("水晶")) ? 4 : 10;
-        for (let i = min; i <= max; i++) maxSelect.add(new Option(i + " 人", i));
-        renderPlayerInputs();
-    }
-
-    function renderPlayerInputs() {
-        const count = document.getElementById('formMax').value;
-        const container = document.getElementById('playerInputsContainer');
-        container.innerHTML = `<label>👤 冒險者名單</label>`;
-        for (let i = 1; i <= count; i++) {
-            container.innerHTML += `
-                <div class="player-row">
-                    <select class="p-server">${SERVERS.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
-                    <input type="text" class="p-name" placeholder="冒險者 ${i} 姓名">
-                </div>`;
-        }
-    }
-
-    window.openBooking = (id) => {
-        selectedSlot = allData.find(i => i.id === id);
-        const startSel = document.getElementById('formStart'), endSel = document.getElementById('formEnd');
-        startSel.innerHTML = ""; endSel.innerHTML = "";
-        let curr = new Date(`2026/01/01 ${selectedSlot.start}`), end = new Date(`2026/01/01 ${selectedSlot.end}`);
-        while(curr <= end) {
-            let t = curr.toTimeString().slice(0, 5);
-            startSel.add(new Option(t, t)); endSel.add(new Option(t, t));
-            curr.setMinutes(curr.getMinutes() + 30);
-        }
-        handleGameChange();
-        document.getElementById('bookingModal').style.display = 'flex';
-    };
-
-    window.openJoin = (id, game, title) => {
-        currentJoinId = id;
-        document.getElementById('joinInfo').innerText = `任務：[${game}] ${title}`;
-        document.getElementById('joinServer').innerHTML = SERVERS.map(s => `<option value="${s}">${s}</option>`).join('');
-        document.getElementById('joinModal').style.display = 'flex';
-    };
-
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    function submitBooking() {
-        const names = Array.from(document.querySelectorAll('.p-name'))
-            .map((input, idx) => document.querySelectorAll('.p-server')[idx].value + input.value)
-            .filter(v => v.length > 5).join(', ');
-        
-        const payload = { 
-            action: "insert", 
-            data: { 
-                id: "bk_" + Date.now(), 
-                date: selectedSlot.date, 
-                start: document.getElementById('formStart').value, 
-                end: document.getElementById('formEnd').value, 
-                type: "booking", 
-                status: "pending", 
-                game: document.getElementById('formGame').value, 
-                title: document.getElementById('formTitle').value + " (" + document.getElementById('formStatus').value + ")", 
-                names: names, 
-                max: document.getElementById('formMax').value 
-            } 
-        };
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-        .then(() => { alert("✅ 契約已發布至管理處，請靜候審核。"); closeModal('bookingModal'); fetchData(); });
-    }
-
-    function submitJoin() {
-        const name = document.getElementById('joinName').value;
-        if(!name) return alert("冒險者請留下大名");
-        const target = allData.find(b => b.id === currentJoinId);
-        const payload = { action: "update", id: currentJoinId, names: target.names + ", " + document.getElementById('joinServer').value + name };
-        fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-        .then(() => { alert("✅ 併桌申請已送出！"); closeModal('joinModal'); fetchData(); });
-    }
-
-    window.onload = () => { createEmbers(); fetchData(); showSection('store'); };
-</script>
-</body>
-</html>
+  <!-- 預約大廳 -->
+  <section id="lobby" class="py-24 px-4 max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+      <div>
+        <h2 class="font-cinzel text-4xl font-bold gold-text mb-4">ADVENTURE LOBBY</h2>
+        <p class="text-text-muted tracking-widest">當前開放預約的冒險時段</p>
+      </div>
+      <button onclick="loadLobby()" class="flex items-center gap-2 text-gold hover:text-gold-light transition-colors group">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <span class="tracking-widest">重新整理大廳</span>
+      </button>
+    </div>
