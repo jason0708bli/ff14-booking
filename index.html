@@ -3,698 +3,498 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>光之意志桌遊酒館 ─ FF14 RP 桌遊店</title>
+  <title>光之意志桌遊酒館 - FF14 RP 預約與併桌</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="config.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --gold: #c9a84c;
       --gold-light: #f0d080;
       --gold-dark: #8a6a1e;
-      --blue-gem: #4090d0;
-      --red-gem: #d04050;
-      --purple-gem: #9060c0;
-      --bg-deep: #0a0a12;
-      --bg-card: #13131c;
-      --border-gold: rgba(201,168,76,0.3);
-      --text-main: #e8dfc8;
-      --text-muted: #7a7060;
+      --bg-deep: #080812;
+      --bg-card: #151521;
+      --text-main: #efe4c8;
+      --text-muted: #968a76;
+      --border-gold: rgba(201, 168, 76, 0.3);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
+      margin: 0;
       font-family: 'Noto Serif TC', serif;
-      background-color: var(--bg-deep);
       color: var(--text-main);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(201,168,76,0.12), transparent 28rem),
+        radial-gradient(circle at 80% 20%, rgba(100,70,180,0.16), transparent 32rem),
+        linear-gradient(180deg, #060610 0%, var(--bg-deep) 45%, #101018 100%);
       min-height: 100vh;
-      overflow-x: hidden;
     }
     .font-cinzel { font-family: 'Cinzel', serif; }
     .gold-text { color: var(--gold); }
-
-    /* 星空背景 */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        radial-gradient(1px 1px at 10% 10%, #fff, transparent),
-        radial-gradient(1px 1px at 20% 50%, #fff, transparent),
-        radial-gradient(2px 2px at 40% 80%, #fff, transparent),
-        radial-gradient(1px 1px at 60% 20%, #fff, transparent),
-        radial-gradient(2px 2px at 80% 40%, #fff, transparent),
-        radial-gradient(1px 1px at 90% 70%, #fff, transparent);
-      background-size: 1000px 1000px;
-      opacity: 0.15;
-      z-index: -1;
-    }
-
-    /* 燈號格子 */
-    .slot-grid { display: flex; gap: 4px; margin-top: 8px; }
-    .slot-dot { width: 12px; height: 12px; border-radius: 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
-    .slot-dot.green { background: #4ade80; box-shadow: 0 0 8px #4ade80; border: none; }
-    .slot-dot.purple { background: #a855f7; box-shadow: 0 0 8px #a855f7; border: none; }
-
-    /* 下拉選單修正 */
-    select option { background-color: var(--bg-deep); color: white; }
-
-    /* 其他樣式 */
-    .hero-gradient { background: linear-gradient(to bottom, transparent, var(--bg-deep)); }
-    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card-hover:hover { transform: translateY(-8px); border-color: var(--gold); box-shadow: 0 10px 30px -10px rgba(201,168,76,0.3); }
-    .btn-gold { background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: #000; font-weight: 700; transition: all 0.3s; }
-    .btn-gold:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(201,168,76,0.4); }
-    .spinner { width: 24px; height: 24px; border: 3px solid rgba(201,168,76,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .text-gold { color: var(--gold); }
-    .text-gold-light { color: var(--gold-light); }
-    .text-text-muted { color: var(--text-muted); }
-    .bg-bg-deep\/80 { background-color: rgba(10, 10, 18, 0.8); }
-    .border-gold\/10 { border-color: rgba(201, 168, 76, 0.1); }
-    .border-gold\/40 { border-color: rgba(201, 168, 76, 0.4); }
-    .border-gold\/50 { border-color: rgba(201, 168, 76, 0.5); }
-    .hover\:text-gold:hover { color: var(--gold); }
-    .hover\:text-gold-light:hover { color: var(--gold-light); }
-    .hover\:bg-gold\/10:hover { background-color: rgba(201, 168, 76, 0.1); }
-
-    /* 連線狀態指示燈 */
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .status-dot-inner { width: 8px; height: 8px; border-radius: 50%; }
-    .status-online { color: #50c878; border-color: rgba(80,200,120,0.3); }
-    .status-online .status-dot-inner { background: #50c878; box-shadow: 0 0 8px #50c878; }
-    .status-offline { color: #e05050; border-color: rgba(224,80,80,0.3); }
-    .status-offline .status-dot-inner { background: #e05050; box-shadow: 0 0 8px #e05050; }
-    .status-checking { color: #c9a84c; border-color: rgba(201,168,76,0.3); }
-    .status-checking .status-dot-inner { background: #c9a84c; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-
-    .panel {
-      background: rgba(19, 19, 28, 0.88);
+    .glass {
+      background: rgba(21, 21, 33, 0.86);
       border: 1px solid var(--border-gold);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 20px 70px rgba(0,0,0,0.35), inset 0 1px rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px);
     }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+      color: #0b0b12;
+      font-weight: 800;
+      border-radius: 999px;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 8px 24px rgba(201,168,76,0.2);
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 12px 34px rgba(201,168,76,0.34); }
+    .btn-ghost {
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold-light);
+      border-radius: 999px;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-ghost:hover { background: rgba(201,168,76,0.08); border-color: var(--gold); }
     .field {
       width: 100%;
-      border: 1px solid rgba(201, 168, 76, 0.25);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(201,168,76,0.22);
+      border-radius: 0.85rem;
       color: var(--text-main);
-      border-radius: 0.75rem;
       padding: 0.85rem 1rem;
       outline: none;
     }
-    .field:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
-    }
-    textarea.field { min-height: 7rem; resize: vertical; }
-    .slot-card {
-      border: 1px solid var(--border-gold);
-      background: linear-gradient(180deg, rgba(19, 19, 28, 0.96), rgba(10, 10, 18, 0.96));
-      border-radius: 1.5rem;
-      padding: 1.5rem;
-    }
-    .slot-card.selected {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.14), 0 18px 40px rgba(201, 168, 76, 0.12);
-    }
+    .field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.13); }
+    .field option { background: #151521; color: var(--text-main); }
     .badge {
       display: inline-flex;
       align-items: center;
+      gap: .35rem;
       border-radius: 999px;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.75rem;
-      border: 1px solid rgba(201, 168, 76, 0.25);
+      border: 1px solid rgba(201,168,76,0.26);
+      padding: .28rem .72rem;
+      font-size: .75rem;
       color: var(--gold-light);
-      background: rgba(201, 168, 76, 0.08);
+      background: rgba(201,168,76,0.08);
     }
-    .empty-state {
-      border: 1px dashed rgba(201, 168, 76, 0.25);
-      border-radius: 1.5rem;
-      padding: 3rem 1.5rem;
-      text-align: center;
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.03);
+    .badge-green { color: #78e6a2; border-color: rgba(120,230,162,.35); background: rgba(120,230,162,.1); }
+    .badge-red { color: #f08a8a; border-color: rgba(240,138,138,.35); background: rgba(240,138,138,.1); }
+    .badge-purple { color: #c6a0ff; border-color: rgba(198,160,255,.35); background: rgba(198,160,255,.1); }
+    .spinner {
+      width: 24px; height: 24px; border: 3px solid rgba(201,168,76,.25);
+      border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite;
     }
-    .booking-chip {
-      border: 1px solid rgba(201, 168, 76, 0.18);
-      border-radius: 1rem;
-      padding: 0.75rem;
-      background: rgba(255, 255, 255, 0.035);
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .starfield::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 12% 22%, #fff, transparent),
+        radial-gradient(1px 1px at 32% 72%, #fff, transparent),
+        radial-gradient(2px 2px at 68% 28%, #fff, transparent),
+        radial-gradient(1px 1px at 86% 66%, #fff, transparent);
+      background-size: 900px 900px;
+      opacity: .18;
+      z-index: -1;
     }
   </style>
 </head>
-<body>
-  <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-deep/80 backdrop-blur-md border-b border-gold/10 px-4 py-3">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <div class="font-cinzel text-gold font-bold tracking-widest">WILL OF LIGHT</div>
-      <div class="flex items-center gap-4">
-        <!-- 連線狀態指示 -->
-        <div id="connectionStatus" class="status-indicator status-checking">
-          <div class="status-dot-inner"></div>
-          <span id="statusText">連線檢查中...</span>
-        </div>
-        <a href="admin.html" class="text-xs text-text-muted hover:text-gold transition-colors">主持人後台</a>
+<body class="starfield">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#080812]/85 border-b border-[rgba(201,168,76,0.18)] backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="#" class="font-cinzel tracking-[0.25em] font-black gold-text">WILL OF LIGHT</a>
+      <div class="flex items-center gap-3 text-sm">
+        <span id="connectionStatus" class="badge">連線檢查中</span>
+        <a href="admin.html" class="btn-ghost px-4 py-2">主持人後台</a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="relative h-screen flex items-center justify-center overflow-hidden">
-    <div class="absolute inset-0 z-0">
-      <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent opacity-60"></div>
-      <div class="absolute inset-0 hero-gradient"></div>
-    </div>
-    <div class="relative z-10 text-center px-4">
-      <div class="mb-6 inline-block border-y border-gold/40 py-2 px-8">
-        <span class="font-cinzel tracking-[0.5em] text-gold text-sm md:text-base">EST. 2024 ─ EOZEA</span>
+  <header class="min-h-screen flex items-center justify-center px-4 pt-20">
+    <div class="max-w-5xl mx-auto text-center">
+      <div class="inline-flex items-center gap-3 badge mb-8">
+        <span>GOLD SAUCER TABLE GUILD</span>
       </div>
-      <h1 class="font-cinzel text-5xl md:text-8xl font-black mb-6 tracking-tighter">
-        <span class="block text-white opacity-90">WILL OF LIGHT</span>
-        <span class="block gold-text mt-2">光之意志</span>
+      <h1 class="font-cinzel text-5xl md:text-8xl font-black leading-none">
+        <span class="block text-white/90">WILL OF LIGHT</span>
+        <span class="block gold-text mt-3">光之意志</span>
       </h1>
-      <p class="text-lg md:text-2xl text-text-muted mb-12 max-w-2xl mx-auto leading-relaxed font-light tracking-widest">
-        在星辰交織的酒館中，開啟屬於您的冒險棋局
+      <p class="mt-8 text-lg md:text-2xl text-[var(--text-muted)] tracking-widest leading-relaxed">
+        FF14 RP 桌遊酒館預約與併桌大廳
       </p>
-      <div class="flex flex-col md:flex-row gap-6 justify-center">
-        <button onclick="scrollToSection('#lobby')" class="btn-gold px-12 py-4 rounded-full text-lg tracking-widest">立即預約冒險</button>
-        <button onclick="scrollToSection('#rules')" class="border border-gold/50 text-gold px-12 py-4 rounded-full text-lg tracking-widest hover:bg-gold/10 transition-all">冒險須知</button>
+      <div class="mt-12 flex flex-col sm:flex-row justify-center gap-4">
+        <button class="btn-gold px-10 py-4" onclick="scrollToSection('#lobby')">立即查看時段</button>
+        <button class="btn-ghost px-10 py-4" onclick="scrollToSection('#rules')">遊戲規則與寶石</button>
       </div>
     </div>
-  </section>
+  </header>
 
-  <!-- 預約大廳 -->
-  <section id="lobby" class="py-24 px-4 max-w-7xl mx-auto">
-    <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-      <div>
-        <h2 class="font-cinzel text-4xl font-bold gold-text mb-4">ADVENTURE LOBBY</h2>
-        <p class="text-text-muted tracking-widest">當前開放預約的冒險時段</p>
+  <main>
+    <section id="rules" class="max-w-7xl mx-auto px-4 py-20">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <article class="glass rounded-3xl p-7">
+          <span class="badge badge-green mb-4">藍寶石回饋</span>
+          <h2 class="text-2xl font-bold gold-text mb-3">阿瓦隆</h2>
+          <p class="text-[var(--text-muted)] leading-7">1 人 1 場 7 萬金幣，5 ~ 10 人。遊玩可獲得藍寶石 1 顆，集滿 5 顆可免費兌換一場阿瓦隆。</p>
+        </article>
+        <article class="glass rounded-3xl p-7">
+          <span class="badge badge-red mb-4">紅寶石回饋</span>
+          <h2 class="text-2xl font-bold gold-text mb-3">阿瓦隆2</h2>
+          <p class="text-[var(--text-muted)] leading-7">1 人 1 場 9 萬金幣，5 ~ 10 人。遊玩可獲得紅寶石 1 顆，集滿 5 顆可免費兌換一場阿瓦隆2。</p>
+        </article>
+        <article class="glass rounded-3xl p-7">
+          <span class="badge badge-purple mb-4">其他桌遊</span>
+          <h2 class="text-2xl font-bold gold-text mb-3">璀璨寶石 / TRPG</h2>
+          <p class="text-[var(--text-muted)] leading-7">璀璨寶石 2 ~ 4 人，TRPG 依主持人開團設定。費用於表單即時計算，價格可在前端與 GAS 常數中調整。</p>
+        </article>
       </div>
-      <button onclick="loadLobby()" class="flex items-center gap-2 text-gold hover:text-gold-light transition-colors group">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        <span class="tracking-widest">重新整理大廳</span>
-      </button>
-    </div>
+    </section>
 
-    <div id="lobbyNotice" class="empty-state">
-      <div class="spinner mx-auto mb-4"></div>
-      正在讀取冒險時段...
-    </div>
-    <div id="slotList" class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
-  </section>
-
-  <!-- 預約表單 -->
-  <section id="booking" class="py-20 px-4 max-w-4xl mx-auto">
-    <div class="panel rounded-3xl p-6 md:p-10">
-      <div class="mb-8">
-        <span class="badge mb-4">BOOKING REQUEST</span>
-        <h2 class="font-cinzel text-3xl md:text-4xl font-bold gold-text mb-3">提交冒險契約</h2>
-        <p id="selectedSlotText" class="text-text-muted">請先在上方選擇一個開放時段。</p>
-      </div>
-
-      <form id="bookingForm" class="grid gap-5">
-        <input type="hidden" id="shiftId" />
-        <div class="grid md:grid-cols-4 gap-5">
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">開始時間</span>
-            <input id="bookingStartTime" class="field" type="time" required />
-          </label>
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">結束時間</span>
-            <input id="bookingEndTime" class="field" type="time" required />
-          </label>
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">遊戲</span>
-            <select id="game" class="field" required></select>
-          </label>
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">類型</span>
-            <select id="bookingType" class="field" required>
-              <option value="併桌">併桌</option>
-              <option value="包桌">包桌</option>
-            </select>
-          </label>
+    <section id="lobby" class="max-w-7xl mx-auto px-4 py-20">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <div>
+          <p class="font-cinzel tracking-[0.35em] text-sm gold-text">ADVENTURE LOBBY</p>
+          <h2 class="text-4xl md:text-5xl font-black mt-3">目前可預約時段</h2>
+          <p class="text-[var(--text-muted)] mt-3">選擇主持人釋出的時段，建立包場或開放併桌。</p>
         </div>
-        <div class="grid md:grid-cols-3 gap-5">
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">預約人數</span>
-            <input id="playerCount" class="field" type="number" min="1" max="10" value="1" required />
-          </label>
-          <label class="grid gap-2">
-            <span class="text-sm text-gold tracking-widest">局數</span>
-            <input id="rounds" class="field" type="number" min="1" max="12" value="1" required />
-          </label>
-          <label class="flex items-center gap-3 mt-8 text-sm text-text-muted">
-            <input id="useGem" type="checkbox" />
-            使用寶石兌換
-          </label>
-        </div>
-        <label class="grid gap-2">
-          <span class="text-sm text-gold tracking-widest">角色資料</span>
-          <textarea id="members" class="field" placeholder="每行一位：伺服器/角色名&#10;例：Typhon/光之冒險者" required></textarea>
-        </label>
-        <button id="submitBooking" class="btn-gold rounded-full px-8 py-4 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-          送出預約
-        </button>
-        <p id="formHint" class="text-sm text-text-muted">送出後會寫入併桌團員明細；GAS 會檢查時段衝突與 30 分鐘間隔。</p>
-      </form>
-    </div>
-  </section>
-
-  <!-- 加入併桌 -->
-  <section id="join" class="py-10 px-4 max-w-4xl mx-auto">
-    <div class="panel rounded-3xl p-6 md:p-10">
-      <div class="mb-8">
-        <span class="badge mb-4">JOIN TABLE</span>
-        <h2 class="font-cinzel text-3xl md:text-4xl font-bold gold-text mb-3">加入既有併桌</h2>
-        <p id="selectedBookingText" class="text-text-muted">請先在大廳選擇一個可加入的併桌團。</p>
+        <button class="btn-ghost px-6 py-3" onclick="loadBookings()">重新整理</button>
       </div>
+      <div id="lobbyState" class="glass rounded-3xl p-10 text-center text-[var(--text-muted)]">
+        <div class="spinner mx-auto mb-4"></div>
+        正在讀取大廳...
+      </div>
+      <div id="bookingGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+    </section>
 
-      <form id="joinForm" class="grid gap-5">
-        <input type="hidden" id="bookingId" />
-        <label class="grid gap-2">
-          <span class="text-sm text-gold tracking-widest">加入角色資料</span>
-          <textarea id="joinMembers" class="field" placeholder="每行一位：伺服器/角色名" required></textarea>
-        </label>
-        <button id="submitJoin" class="btn-gold rounded-full px-8 py-4 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-          申請加入併桌
-        </button>
-        <p class="text-sm text-text-muted">加入人數會依角色資料行數自動計算，上限合計 10 人。</p>
-      </form>
-    </div>
-  </section>
+    <section id="reserve" class="max-w-5xl mx-auto px-4 py-20">
+      <div class="glass rounded-3xl p-6 md:p-10">
+        <div class="mb-8">
+          <span class="badge mb-4">RESERVATION</span>
+          <h2 class="text-3xl md:text-4xl font-black gold-text">預約表單</h2>
+          <p id="selectedBookingText" class="text-[var(--text-muted)] mt-3">請先在大廳選擇一個時段。</p>
+        </div>
 
-  <!-- 冒險須知 -->
-  <section id="rules" class="py-20 px-4 max-w-5xl mx-auto">
-    <div class="grid md:grid-cols-3 gap-6">
-      <article class="panel rounded-3xl p-6">
-        <span class="badge mb-4">01</span>
-        <h3 class="text-xl font-bold gold-text mb-3">先選時段</h3>
-        <p class="text-text-muted leading-7">請從大廳挑選仍開放的冒險時段，再填寫想遊玩的系統、主題與參與者。</p>
-      </article>
-      <article class="panel rounded-3xl p-6">
-        <span class="badge mb-4">02</span>
-        <h3 class="text-xl font-bold gold-text mb-3">填寫角色資料</h3>
-        <p class="text-text-muted leading-7">送出前請確認時間、遊戲與角色資料；系統會檢查班表範圍與預約間隔。</p>
-      </article>
-      <article class="panel rounded-3xl p-6">
-        <span class="badge mb-4">03</span>
-        <h3 class="text-xl font-bold gold-text mb-3">準時赴約</h3>
-        <p class="text-text-muted leading-7">若臨時需要變更，請盡早聯繫店家或主持人，以便釋出時段給其他冒險者。</p>
-      </article>
-    </div>
-  </section>
+        <form id="reserveForm" class="grid gap-5">
+          <input type="hidden" id="bookingId">
+          <div class="grid md:grid-cols-2 gap-5">
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">伺服器</span>
+              <input id="server" class="field" placeholder="例：Typhon" required>
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">角色 ID</span>
+              <input id="characterId" class="field" placeholder="例：光之冒險者" required>
+            </label>
+          </div>
+          <div class="grid md:grid-cols-3 gap-5">
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">預約模式</span>
+              <select id="mode" class="field">
+                <option value="開放併桌">開放併桌</option>
+                <option value="包場/私人團">包場/私人團</option>
+              </select>
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">人數</span>
+              <input id="playerCount" class="field" type="number" min="1" value="1" required>
+            </label>
+            <label class="flex items-center gap-3 mt-8 text-sm text-[var(--text-muted)]">
+              <input id="useGem" type="checkbox" class="w-4 h-4">
+              本次預約欲使用寶石兌換免費場次
+            </label>
+          </div>
+          <div class="rounded-2xl border border-[rgba(201,168,76,0.22)] bg-black/20 p-5">
+            <p id="gameRuleHint" class="text-[var(--text-muted)]">選擇時段後會顯示遊戲規則。</p>
+            <p id="feeText" class="text-2xl font-black gold-text mt-2">預計總費用：--</p>
+          </div>
+          <button id="reserveBtn" type="submit" class="btn-gold px-10 py-4 disabled:opacity-50 disabled:cursor-not-allowed" disabled>送出預約</button>
+        </form>
+      </div>
+    </section>
 
-  <footer class="py-10 text-center text-sm text-text-muted">
-    <p class="font-cinzel tracking-[0.35em] text-gold mb-2">WILL OF LIGHT</p>
-    <p>FF14 RP 桌遊酒館預約系統</p>
-  </footer>
+    <section id="join" class="max-w-5xl mx-auto px-4 py-10 pb-24">
+      <div class="glass rounded-3xl p-6 md:p-10">
+        <div class="mb-8">
+          <span class="badge badge-purple mb-4">JOIN TABLE</span>
+          <h2 class="text-3xl md:text-4xl font-black gold-text">我要併桌</h2>
+          <p id="joinTargetText" class="text-[var(--text-muted)] mt-3">請先在大廳選擇一個開放併桌團。</p>
+        </div>
+        <form id="joinForm" class="grid md:grid-cols-[1fr_1fr_auto] gap-5 items-end">
+          <input type="hidden" id="joinBookingId">
+          <label class="grid gap-2">
+            <span class="text-sm gold-text font-bold">伺服器</span>
+            <input id="joinServer" class="field" placeholder="例：Typhon" required>
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm gold-text font-bold">角色 ID</span>
+            <input id="joinCharacterId" class="field" placeholder="例：光之冒險者" required>
+          </label>
+          <button id="joinBtn" class="btn-gold px-8 py-4 disabled:opacity-50 disabled:cursor-not-allowed" disabled>加入併桌</button>
+        </form>
+      </div>
+    </section>
+  </main>
 
   <script>
-    const API_URL = window.FF14_BOOKING_API_URL;
-    const state = {
-      shifts: [],
-      selectedShift: null,
-      selectedBooking: null
+    const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+    const MODE_SLOT = '時段釋出';
+    const MODE_PRIVATE = '包場/私人團';
+    const MODE_OPEN = '開放併桌';
+    const STATUS_OPEN = '開放預約中';
+    const STATUS_FULL = '已滿團';
+    const STATUS_GEM = '使用寶石兌換';
+    const STATUS_ENDED = '已結束';
+    const LOCAL_GAME_RULES = {
+      '阿瓦隆': { min: 5, max: 10, priceWan: 7, gem: '藍寶石' },
+      '阿瓦隆2': { min: 5, max: 10, priceWan: 9, gem: '紅寶石' },
+      '璀璨寶石': { min: 2, max: 4, priceWan: 5, gem: '' },
+      'TRPG': { min: 1, max: 6, priceWan: 10, gem: '' }
     };
 
-    const els = {
-      connectionStatus: document.getElementById('connectionStatus'),
-      statusText: document.getElementById('statusText'),
-      lobbyNotice: document.getElementById('lobbyNotice'),
-      slotList: document.getElementById('slotList'),
-      selectedSlotText: document.getElementById('selectedSlotText'),
-      shiftId: document.getElementById('shiftId'),
-      form: document.getElementById('bookingForm'),
-      submit: document.getElementById('submitBooking'),
-      formHint: document.getElementById('formHint'),
-      game: document.getElementById('game'),
-      bookingStartTime: document.getElementById('bookingStartTime'),
-      bookingEndTime: document.getElementById('bookingEndTime'),
-      bookingType: document.getElementById('bookingType'),
-      playerCount: document.getElementById('playerCount'),
-      rounds: document.getElementById('rounds'),
-      useGem: document.getElementById('useGem'),
-      members: document.getElementById('members'),
-      selectedBookingText: document.getElementById('selectedBookingText'),
-      bookingId: document.getElementById('bookingId'),
-      joinForm: document.getElementById('joinForm'),
-      submitJoin: document.getElementById('submitJoin'),
-      joinMembers: document.getElementById('joinMembers')
+    const state = {
+      bookings: [],
+      gameRules: LOCAL_GAME_RULES,
+      selected: null,
+      joinTarget: null
     };
+
+    const el = {
+      connectionStatus: document.getElementById('connectionStatus'),
+      lobbyState: document.getElementById('lobbyState'),
+      bookingGrid: document.getElementById('bookingGrid'),
+      reserveForm: document.getElementById('reserveForm'),
+      bookingId: document.getElementById('bookingId'),
+      selectedBookingText: document.getElementById('selectedBookingText'),
+      server: document.getElementById('server'),
+      characterId: document.getElementById('characterId'),
+      mode: document.getElementById('mode'),
+      playerCount: document.getElementById('playerCount'),
+      useGem: document.getElementById('useGem'),
+      gameRuleHint: document.getElementById('gameRuleHint'),
+      feeText: document.getElementById('feeText'),
+      reserveBtn: document.getElementById('reserveBtn'),
+      joinForm: document.getElementById('joinForm'),
+      joinBookingId: document.getElementById('joinBookingId'),
+      joinTargetText: document.getElementById('joinTargetText'),
+      joinServer: document.getElementById('joinServer'),
+      joinCharacterId: document.getElementById('joinCharacterId'),
+      joinBtn: document.getElementById('joinBtn')
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      el.playerCount.addEventListener('input', updateFee);
+      el.mode.addEventListener('change', updateFee);
+      el.useGem.addEventListener('change', updateFee);
+      el.reserveForm.addEventListener('submit', reserveSelected);
+      el.joinForm.addEventListener('submit', joinSelected);
+      loadBookings();
+    });
 
     function scrollToSection(selector) {
       document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function setStatus(status, text) {
-      els.connectionStatus.className = `status-indicator status-${status}`;
-      els.statusText.textContent = text;
+    function isApiConfigured() {
+      return GAS_API_URL && !GAS_API_URL.includes('PASTE_YOUR_GAS_WEB_APP_URL_HERE');
     }
 
-    async function getJson(url) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    }
-
-    function getJsonp(url) {
-      return new Promise((resolve, reject) => {
-        const callbackName = `handleLobbyResponse_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        const script = document.createElement('script');
-        const timeout = window.setTimeout(() => {
-          cleanup();
-          reject(new Error('讀取資料逾時'));
-        }, 10000);
-
-        function cleanup() {
-          window.clearTimeout(timeout);
-          delete window[callbackName];
-          script.remove();
-        }
-
-        window[callbackName] = (data) => {
-          cleanup();
-          resolve(data);
-        };
-
-        script.onerror = () => {
-          cleanup();
-          reject(new Error('無法載入資料'));
-        };
-        script.src = `${url}&callback=${callbackName}`;
-        document.body.appendChild(script);
-      });
-    }
-
-    async function postJson(payload) {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
-      if (!result.success) throw new Error(result.message || '操作失敗');
-      return result;
-    }
-
-    async function loadLobby() {
-      if (!API_URL) {
-        setStatus('offline', '尚未設定 API');
-        showNotice('尚未設定 Google Apps Script API URL。');
+    async function loadBookings() {
+      if (!isApiConfigured()) {
+        setConnection(false, '尚未設定 GAS URL');
+        showLobbyMessage('請先將 index.html 內的 GAS_API_URL 換成部署後的 Web App URL。');
         return;
       }
 
-      setStatus('checking', '連線檢查中...');
-      showNotice('正在讀取冒險時段...', true);
-
-      const url = `${API_URL}?action=getShifts&t=${Date.now()}`;
+      setConnection(null, '連線檢查中');
+      showLobbyMessage('正在讀取大廳...', true);
       try {
-        let result;
-        try {
-          result = await getJson(url);
-        } catch (error) {
-          result = await getJsonp(url);
-        }
-        if (!result.success) throw new Error(result.message || '讀取資料失敗');
-        state.shifts = Array.isArray(result.data) ? result.data : [];
-        setStatus('online', '據點連線正常');
-        renderSlots();
+        const res = await fetch(`${GAS_API_URL}?action=listBookings&t=${Date.now()}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || '讀取失敗');
+        state.bookings = data.bookings || [];
+        state.gameRules = data.gameRules || LOCAL_GAME_RULES;
+        setConnection(true, '系統連線正常');
+        renderLobby();
       } catch (error) {
         console.error(error);
-        setStatus('offline', '連線失敗');
-        showNotice(`${error.message}。請確認 GAS 已部署最新版本，且 doGet 支援 action=getShifts。`);
+        setConnection(false, '系統連線異常');
+        showLobbyMessage(error.message || '讀取大廳失敗，請稍後再試。');
       }
     }
 
-    function showNotice(message, withSpinner = false) {
-      els.slotList.innerHTML = '';
-      els.lobbyNotice.hidden = false;
-      els.lobbyNotice.textContent = '';
-      if (withSpinner) {
-        const spinner = document.createElement('div');
-        spinner.className = 'spinner mx-auto mb-4';
-        els.lobbyNotice.appendChild(spinner);
-      }
-      els.lobbyNotice.appendChild(document.createTextNode(message));
+    function setConnection(ok, text) {
+      el.connectionStatus.className = ok === true ? 'badge badge-green' : ok === false ? 'badge badge-red' : 'badge';
+      el.connectionStatus.textContent = text;
     }
 
-    function formatDate(date) {
-      if (!date) return '未指定日期';
-      const parsed = new Date(`${date}T00:00:00`);
-      if (Number.isNaN(parsed.getTime())) return date;
-      return parsed.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'short' });
+    function showLobbyMessage(message, spinner = false) {
+      el.bookingGrid.innerHTML = '';
+      el.lobbyState.hidden = false;
+      el.lobbyState.innerHTML = `${spinner ? '<div class="spinner mx-auto mb-4"></div>' : ''}${escapeHtml(message)}`;
     }
 
-    function renderSlots() {
-      const shifts = state.shifts
-        .filter((shift) => shift.status === '開放中')
-        .sort((a, b) => `${a.date || ''}${a.startTime || ''}`.localeCompare(`${b.date || ''}${b.startTime || ''}`));
+    function renderLobby() {
+      const bookings = state.bookings
+        .filter((booking) => booking.status !== STATUS_ENDED)
+        .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 
-      els.slotList.innerHTML = '';
-
-      if (!shifts.length) {
-        showNotice('目前尚未開放可預約時段，請稍後再回來看看。');
+      el.bookingGrid.innerHTML = '';
+      if (!bookings.length) {
+        showLobbyMessage('目前沒有可預約時段。');
         return;
       }
 
-      els.lobbyNotice.hidden = true;
-
-      shifts.forEach((shift) => {
-        const bookings = Array.isArray(shift.bookings) ? shift.bookings : [];
-        const card = document.createElement('article');
-        card.className = `slot-card card-hover ${state.selectedShift?.shiftId === shift.shiftId ? 'selected' : ''}`;
-
-        const header = document.createElement('div');
-        header.className = 'flex justify-between items-start gap-4 mb-5';
-
-        const titleWrap = document.createElement('div');
-        const date = document.createElement('h3');
-        date.className = 'text-2xl font-bold gold-text mb-2';
-        date.textContent = formatDate(shift.date);
-        const time = document.createElement('p');
-        time.className = 'text-text-muted';
-        time.textContent = `${shift.startTime || '--:--'} - ${shift.endTime || '--:--'} / 主持人：${shift.host || '未指定'}`;
-        titleWrap.append(date, time);
-
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = shift.status || '未標記';
-        header.append(titleWrap, badge);
-
-        const dots = document.createElement('div');
-        dots.className = 'slot-grid mb-5';
-        const totalPlayers = bookings.reduce((sum, booking) => sum + Number(booking.playerCount || 0) + Number(booking.joinedCount || 0), 0);
-        const dotTotal = Math.max(6, Math.min(totalPlayers, 12));
-        for (let i = 0; i < dotTotal; i += 1) {
-          const dot = document.createElement('div');
-          dot.className = 'slot-dot';
-          if (i < totalPlayers) dot.classList.add(i % 2 ? 'purple' : 'green');
-          dots.appendChild(dot);
-        }
-
-        const meta = document.createElement('p');
-        meta.className = 'text-sm text-text-muted mb-6';
-        meta.textContent = `可玩項目：${(shift.gamesOffered || []).join('、') || '未設定'}。目前 ${bookings.length} 團 / ${totalPlayers} 人`;
-
-        const bookingList = document.createElement('div');
-        bookingList.className = 'grid gap-3 mb-6';
-        if (bookings.length) {
-          bookings.forEach((booking) => bookingList.appendChild(renderBookingChip(shift, booking)));
-        } else {
-          const empty = document.createElement('p');
-          empty.className = 'text-sm text-text-muted';
-          empty.textContent = '這個時段目前還沒有預約。';
-          bookingList.appendChild(empty);
-        }
-
-        const button = document.createElement('button');
-        button.className = 'btn-gold rounded-full px-6 py-3 tracking-widest w-full';
-        button.type = 'button';
-        button.textContent = '建立新預約';
-        button.addEventListener('click', () => selectShift(shift));
-
-        card.append(header, dots, meta, bookingList, button);
-        els.slotList.appendChild(card);
-      });
+      el.lobbyState.hidden = true;
+      bookings.forEach((booking) => el.bookingGrid.appendChild(createBookingCard(booking)));
     }
 
-    function renderBookingChip(shift, booking) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'booking-chip';
+    function createBookingCard(booking) {
+      const card = document.createElement('article');
+      card.className = 'glass rounded-3xl p-6 flex flex-col gap-5';
+      const canReserve = booking.mode === MODE_SLOT && booking.status === STATUS_OPEN;
+      const canJoin = booking.mode === MODE_OPEN && booking.status === STATUS_OPEN && Number(booking.currentPlayers) < Number(booking.maxPlayers);
 
-      const title = document.createElement('p');
-      title.className = 'font-bold gold-text';
-      title.textContent = `${booking.game || '未指定遊戲'} / ${booking.type || '未指定類型'}`;
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm text-[var(--text-muted)]">${escapeHtml(booking.date)} / ${escapeHtml(booking.startTime)} - ${escapeHtml(booking.endTime)}</p>
+            <h3 class="text-2xl font-black gold-text mt-1">${escapeHtml(booking.game)}</h3>
+            <p class="text-sm text-[var(--text-muted)] mt-1">主持人：${escapeHtml(booking.hostName)}</p>
+          </div>
+          ${statusBadge(booking)}
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div class="rounded-2xl bg-black/20 p-3">
+            <p class="text-[var(--text-muted)]">目前人數</p>
+            <p class="text-xl font-black">${Number(booking.currentPlayers)}/${Number(booking.maxPlayers)}</p>
+          </div>
+          <div class="rounded-2xl bg-black/20 p-3">
+            <p class="text-[var(--text-muted)]">模式</p>
+            <p class="text-lg font-bold">${escapeHtml(booking.mode)}</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3 mt-auto">
+          ${canReserve ? '<button class="reserve-action btn-gold px-5 py-3">預約此時段</button>' : ''}
+          ${canJoin ? '<button class="join-action btn-ghost px-5 py-3">我要併桌</button>' : ''}
+          ${!canReserve && !canJoin ? '<button class="btn-ghost px-5 py-3 opacity-50 cursor-not-allowed" disabled>目前不可加入</button>' : ''}
+        </div>
+      `;
 
-      const meta = document.createElement('p');
-      meta.className = 'text-sm text-text-muted';
-      const total = Number(booking.playerCount || 0) + Number(booking.joinedCount || 0);
-      meta.textContent = `${booking.startTime || '--:--'} - ${booking.endTime || '--:--'}，目前 ${total}/10 人`;
-
-      wrapper.append(title, meta);
-      if (booking.type === '併桌' && total < 10) {
-        const button = document.createElement('button');
-        button.className = 'mt-3 text-gold hover:text-gold-light text-sm';
-        button.type = 'button';
-        button.textContent = '加入此併桌';
-        button.addEventListener('click', () => selectJoinBooking(shift, booking));
-        wrapper.appendChild(button);
-      }
-      return wrapper;
+      card.querySelector('.reserve-action')?.addEventListener('click', () => selectBooking(booking));
+      card.querySelector('.join-action')?.addEventListener('click', () => selectJoinTarget(booking));
+      return card;
     }
 
-    function fillGameOptions(games) {
-      els.game.textContent = '';
-      games.forEach((game) => {
-        const option = document.createElement('option');
-        option.value = game;
-        option.textContent = game;
-        els.game.appendChild(option);
-      });
+    function statusBadge(booking) {
+      if (booking.status === STATUS_FULL) return '<span class="badge badge-red">已滿團</span>';
+      if (booking.status === STATUS_GEM || booking.useGem) return '<span class="badge badge-purple">寶石兌換</span>';
+      if (booking.status === STATUS_OPEN) return '<span class="badge badge-green">開放中</span>';
+      return `<span class="badge">${escapeHtml(booking.status || '未知')}</span>`;
     }
 
-    function selectShift(shift) {
-      state.selectedShift = shift;
-      els.shiftId.value = shift.shiftId || '';
-      els.submit.disabled = false;
-      els.bookingStartTime.value = shift.startTime || '';
-      els.bookingEndTime.value = shift.endTime || '';
-      fillGameOptions(shift.gamesOffered || []);
-      els.selectedSlotText.textContent = `${formatDate(shift.date)} ${shift.startTime || '--:--'} - ${shift.endTime || '--:--'} / 主持人：${shift.host || '未指定'}`;
-      els.formHint.textContent = '請填寫預約內容，送出後會寫入併桌團員明細。';
-      renderSlots();
-      scrollToSection('#booking');
+    function selectBooking(booking) {
+      state.selected = booking;
+      const rule = getRule(booking.game);
+      el.bookingId.value = booking.bookingId;
+      el.playerCount.min = rule.min;
+      el.playerCount.max = rule.max;
+      el.playerCount.value = rule.min;
+      el.useGem.disabled = !rule.gem;
+      el.useGem.checked = false;
+      el.reserveBtn.disabled = false;
+      el.selectedBookingText.textContent = `${booking.date} ${booking.startTime}-${booking.endTime} / ${booking.game} / 主持人：${booking.hostName}`;
+      el.gameRuleHint.textContent = `${booking.game} 人數限制 ${rule.min} ~ ${rule.max} 人，每人 ${rule.priceWan} 萬金幣${rule.gem ? `，可使用 ${rule.gem} 兌換。` : '。'}`;
+      updateFee();
+      scrollToSection('#reserve');
     }
 
-    function selectJoinBooking(shift, booking) {
-      state.selectedBooking = booking;
-      els.bookingId.value = booking.bookingId || '';
-      els.submitJoin.disabled = false;
-      els.selectedBookingText.textContent = `${formatDate(shift.date)} ${booking.startTime || '--:--'} - ${booking.endTime || '--:--'} / ${booking.game || '未指定遊戲'}`;
+    function selectJoinTarget(booking) {
+      state.joinTarget = booking;
+      el.joinBookingId.value = booking.bookingId;
+      el.joinBtn.disabled = false;
+      el.joinTargetText.textContent = `${booking.date} ${booking.startTime}-${booking.endTime} / ${booking.game} / 目前 ${booking.currentPlayers}/${booking.maxPlayers} 人`;
       scrollToSection('#join');
     }
 
-    function parseMembers(value) {
-      return value
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [server, ...nameParts] = line.split('/');
-          return {
-            server: (server || '').trim(),
-            characterId: nameParts.join('/').trim()
-          };
-        })
-        .filter((member) => member.server && member.characterId);
+    function updateFee() {
+      if (!state.selected) {
+        el.feeText.textContent = '預計總費用：--';
+        return;
+      }
+
+      const rule = getRule(state.selected.game);
+      const count = Number(el.playerCount.value || 0);
+      if (el.useGem.checked) {
+        el.feeText.textContent = '預計總費用：0 金幣 (請於入場時將集點寶石交給店員)';
+        return;
+      }
+      el.feeText.textContent = `預計總費用：${count * rule.priceWan} 萬金幣`;
     }
 
-    async function submitBooking(event) {
+    async function reserveSelected(event) {
       event.preventDefault();
-      if (!state.selectedShift) {
-        alert('請先選擇冒險時段。');
-        return;
+      if (!state.selected) return alert('請先選擇時段。');
+      const rule = getRule(state.selected.game);
+      const playerCount = Number(el.playerCount.value);
+      if (playerCount < rule.min || playerCount > rule.max) {
+        return alert(`${state.selected.game} 人數限制為 ${rule.min} ~ ${rule.max} 人。`);
       }
+      if (el.useGem.checked && !rule.gem) return alert('此遊戲不支援寶石兌換。');
 
-      const members = parseMembers(els.members.value);
-      if (!members.length) {
-        alert('請用「伺服器/角色名」格式填寫至少一位角色。');
-        return;
-      }
-
-      const payload = {
-        action: 'makeBooking',
-        shiftId: state.selectedShift.shiftId,
-        bookingStartTime: els.bookingStartTime.value,
-        bookingEndTime: els.bookingEndTime.value,
-        game: els.game.value,
-        type: els.bookingType.value,
-        members,
-        useGem: els.useGem.checked,
-        playerCount: Number(els.playerCount.value || members.length),
-        rounds: Number(els.rounds.value || 1)
-      };
-
-      if (payload.bookingStartTime >= payload.bookingEndTime) {
-        alert('結束時間必須晚於開始時間。');
-        return;
-      }
-      if (!payload.game || !payload.type) {
-        alert('請選擇遊戲與預約類型。');
-        return;
-      }
-
-      els.submit.disabled = true;
-      els.submit.textContent = '送出中...';
-      try {
-        const result = await postJson(payload);
-        alert(result.message || '預約成功');
-        els.form.reset();
-        state.selectedShift = null;
-        els.selectedSlotText.textContent = '請先在上方選擇一個開放時段。';
-        await loadLobby();
-      } catch (error) {
-        console.error(error);
-        alert(error.message || '送出失敗，請稍後再試。');
-      } finally {
-        els.submit.textContent = '送出預約';
-        els.submit.disabled = !state.selectedShift;
-      }
+      await postAction({
+        action: 'reserveSlot',
+        bookingId: el.bookingId.value,
+        server: el.server.value.trim(),
+        characterId: el.characterId.value.trim(),
+        mode: el.mode.value,
+        playerCount,
+        useGem: el.useGem.checked
+      }, '預約成功。');
+      el.reserveForm.reset();
+      state.selected = null;
+      el.reserveBtn.disabled = true;
+      el.selectedBookingText.textContent = '請先在大廳選擇一個時段。';
+      await loadBookings();
     }
 
-    async function submitJoin(event) {
+    async function joinSelected(event) {
       event.preventDefault();
-      if (!state.selectedBooking) {
-        alert('請先選擇要加入的併桌團。');
-        return;
-      }
-
-      const members = parseMembers(els.joinMembers.value);
-      if (!members.length) {
-        alert('請用「伺服器/角色名」格式填寫至少一位角色。');
-        return;
-      }
-
-      els.submitJoin.disabled = true;
-      els.submitJoin.textContent = '送出中...';
-      try {
-        const result = await postJson({
-          action: 'joinExistingBooking',
-          bookingId: state.selectedBooking.bookingId,
-          addCount: members.length,
-          members
-        });
-        alert(result.message || '成功加入併桌');
-        els.joinForm.reset();
-        state.selectedBooking = null;
-        els.selectedBookingText.textContent = '請先在大廳選擇一個可加入的併桌團。';
-        await loadLobby();
-      } catch (error) {
-        console.error(error);
-        alert(error.message || '加入失敗，請稍後再試。');
-      } finally {
-        els.submitJoin.textContent = '申請加入併桌';
-        els.submitJoin.disabled = !state.selectedBooking;
-      }
+      if (!state.joinTarget) return alert('請先選擇併桌團。');
+      await postAction({
+        action: 'joinTable',
+        bookingId: el.joinBookingId.value,
+        server: el.joinServer.value.trim(),
+        characterId: el.joinCharacterId.value.trim()
+      }, '成功加入併桌！');
+      el.joinForm.reset();
+      state.joinTarget = null;
+      el.joinBtn.disabled = true;
+      el.joinTargetText.textContent = '請先在大廳選擇一個開放併桌團。';
+      await loadBookings();
     }
 
-    els.form.addEventListener('submit', submitBooking);
-    els.joinForm.addEventListener('submit', submitJoin);
-    loadLobby();
+    async function postAction(payload, fallbackMessage) {
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || '操作失敗');
+      alert(data.message || fallbackMessage);
+      return data;
+    }
+
+    function getRule(game) {
+      return state.gameRules[game] || LOCAL_GAME_RULES[game] || { min: 1, max: 10, priceWan: 0, gem: '' };
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[char]));
+    }
   </script>
 </body>
 </html>

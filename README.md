@@ -1,163 +1,215 @@
 # ff14-booking
 
-FF14 RP 桌遊店「光之意志」預約網站。專案目前是純靜態前端，使用 Google Apps Script Web App 作為資料 API，可部署到 GitHub Pages 或任一靜態主機。
+《FF14》RP 桌遊店「光之意志桌遊酒館」預約與併桌系統。
+
+技術組合：
+
+- 前端：純 HTML + CSS + JavaScript + Tailwind CDN
+- 後端：Google Apps Script
+- 資料庫：Google 試算表
 
 ## 檔案
 
-- `index.html`：玩家前台，可查看開放班表、建立預約、加入既有併桌。
-- `admin.html`：主持人後台，可登入、發布班表、查看預約、結束班表。
-- `adim.html`：舊後台檔名的轉址頁，會導向 `admin.html`。
-- `config.js`：前台使用的 Google Apps Script Web App URL 設定。
-- `gas/Code.gs`：Google Apps Script 後端原始碼。
-- `data.json`：本地資料結構占位，正式流程目前以 GAS 為主。
+- `index.html`：客人官網與併桌大廳
+- `admin.html`：主持人登入與管理後台
+- `gas/Code.gs`：Google Apps Script 後端
+- `adim.html`：舊後台網址轉址到 `admin.html`
+- `config.js`：保留的舊共用設定檔；新版頁面使用各自的 `GAS_API_URL`
 
-## Google Apps Script API 契約
+## Google 試算表結構
 
-前台會呼叫 `config.js` 中的 `window.FF14_BOOKING_API_URL`。新版後台 `admin.html` 目前內含同一個 GAS Web App URL。
+GAS 會支援並可初始化以下三張工作表：
 
-目前 `gas/Code.gs` 直接在 `getSpreadsheet()` 內設定試算表 ID。
+### Hosts
 
-### 讀取資料
+主持人帳號表。
 
-前台與後台會讀取班表：
+| 欄位 | 說明 |
+| --- | --- |
+| `username` | 主持人帳號 |
+| `password` | 主持人密碼 |
+| `displayName` | 前台顯示名稱 |
+
+### Bookings
+
+預約總表。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `bookingId` | 場次 ID |
+| `date` | 日期 |
+| `startTime` | 開始時間 |
+| `endTime` | 結束時間 |
+| `game` | 阿瓦隆 / 阿瓦隆2 / 璀璨寶石 / TRPG |
+| `hostUsername` | 主持人帳號 |
+| `hostName` | 主持人顯示名稱 |
+| `mode` | 時段釋出 / 包場/私人團 / 開放併桌 |
+| `maxPlayers` | 人數上限 |
+| `currentPlayers` | 目前人數 |
+| `status` | 開放預約中 / 已滿團 / 使用寶石兌換 / 已結束 |
+| `useGem` | 是否使用寶石兌換 |
+| `totalFeeWan` | 預計費用，單位：萬金幣 |
+| `createdAt` | 建立時間 |
+| `updatedAt` | 更新時間 |
+
+### Participants
+
+併桌團員明細。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `participantId` | 團員紀錄 ID |
+| `bookingId` | 對應場次 ID |
+| `server` | 客人伺服器 |
+| `characterId` | 客人角色 ID |
+| `count` | 本次加入人數 |
+| `role` | 發起人 / 併桌團員 |
+| `joinedAt` | 加入時間 |
+
+## GAS API
+
+### GET
 
 ```text
-GET <API_URL>?action=getShifts&t=<timestamp>
+?action=setupSheets
+?action=listBookings
 ```
 
-回傳：
+### POST
+
+POST body 使用 JSON 字串；前端使用 `Content-Type: text/plain;charset=utf-8`。
+
+```json
+{ "action": "login", "username": "admin", "password": "password" }
+```
 
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "shiftId": "S1780000000000",
-      "date": "2026-06-07",
-      "startTime": "18:00",
-      "endTime": "23:00",
-      "host": "主持人名稱",
-      "gamesOffered": ["FF14 RP", "D&D"],
-      "status": "開放中",
-      "bookings": [
-        {
-          "bookingId": "B1780000000000",
-          "startTime": "19:00",
-          "endTime": "21:00",
-          "game": "FF14 RP",
-          "type": "併桌",
-          "playerCount": 2,
-          "joinedCount": 1,
-          "rounds": 1,
-          "members": "Typhon/角色名"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### 主持人登入
-
-```json
-{
-  "action": "login",
-  "username": "host",
-  "password": "password"
-}
-```
-
-### 寫入資料
-
-使用 POST，body 為 JSON 字串。前端刻意不設定 `Content-Type: application/json`，以降低 GAS Web App 的 CORS/preflight 問題。
-
-發布班表：
-
-```json
-{
-  "action": "addShift",
-  "date": "2026-06-07",
+  "action": "createSlot",
+  "host": { "username": "admin", "displayName": "示範主持人" },
+  "date": "2026-06-08",
   "startTime": "18:00",
-  "endTime": "23:00",
-  "host": "主持人名稱",
-  "gamesOffered": ["FF14 RP", "D&D"]
+  "endTime": "22:00",
+  "game": "阿瓦隆"
 }
 ```
-
-建立新預約：
 
 ```json
 {
-  "action": "makeBooking",
-  "shiftId": "S1780000000000",
-  "bookingStartTime": "19:00",
-  "bookingEndTime": "21:00",
-  "game": "FF14 RP",
-  "type": "併桌",
-  "members": [{ "server": "Typhon", "characterId": "角色名" }],
-  "useGem": false,
-  "playerCount": 1,
-  "rounds": 1
+  "action": "reserveSlot",
+  "bookingId": "BK...",
+  "server": "Typhon",
+  "characterId": "光之冒險者",
+  "mode": "開放併桌",
+  "playerCount": 5,
+  "useGem": false
 }
 ```
-
-加入既有併桌：
 
 ```json
 {
-  "action": "joinExistingBooking",
-  "bookingId": "B1780000000000",
-  "addCount": 1,
-  "members": [{ "server": "Typhon", "characterId": "角色名" }]
+  "action": "joinTable",
+  "bookingId": "BK...",
+  "server": "Typhon",
+  "characterId": "光之冒險者"
 }
 ```
-
-結束班表：
 
 ```json
-{
-  "action": "endShift",
-  "shiftId": "S1780000000000"
-}
+{ "action": "endBooking", "bookingId": "BK..." }
 ```
 
-## Google Sheet 分頁與欄位
+## 部署教學
 
-`gas/Code.gs` 目前會讀寫以下分頁：
+### 1. 建立 Google 試算表
 
-- `主持人帳號表`
-  1. 帳號
-  2. 密碼
-  3. 顯示名稱
-  4. 可主持遊戲，使用逗號分隔
+1. 到 Google Drive 新增一份 Google 試算表。
+2. 檔名可命名為 `光之意志預約資料庫`。
+3. 不需要手動建立分頁，GAS 會幫你初始化。
 
-- `預約總表`
-  1. 班表 ID
-  2. 日期
-  3. 開始時間
-  4. 結束時間
-  5. 主持人
-  6. 可玩遊戲，使用逗號分隔
-  7. 狀態，例如 `開放中` / `已結束`
+### 2. 建立 Apps Script
 
-- `併桌團員明細`
-  1. 預約 ID
-  2. 班表 ID
-  3. 預約開始時間
-  4. 預約結束時間
-  5. 遊戲
-  6. 類型，例如 `併桌` / `包桌`
-  7. 代表伺服器
-  8. 代表角色名
-  9. 付款方式
-  10. 建立時間
-  11. 初始人數
-  12. 加入人數
-  13. 局數
-  14. 角色明細
+1. 在試算表上方選單點選「擴充功能」→「Apps Script」。
+2. 刪除預設內容。
+3. 將 `gas/Code.gs` 的全部內容貼上。
+4. 儲存專案。
 
-## 注意事項
+### 3. 初始化資料表
 
-- 目前主持人密碼仍是明文存放在試算表；正式營運前建議改成雜湊或至少改用管理 token / Google 帳號授權。
-- 後台登入主要保護 UI；若 GAS Web App 設為公開，仍應在 GAS 端替 `addShift`、`endShift` 等管理 action 加上授權檢查。
-- 更新 `gas/Code.gs` 後，需要重新部署 Web App，前後台才會吃到最新 GAS 邏輯。
+在 Apps Script 編輯器上方函式下拉選單選擇：
+
+```text
+setupSheets
+```
+
+按「執行」。第一次會要求授權，請依照 Google 指示授權。
+
+初始化後會建立：
+
+- `Hosts`
+- `Bookings`
+- `Participants`
+
+並建立一組示範主持人：
+
+```text
+帳號：admin
+密碼：password
+顯示名稱：示範主持人
+```
+
+正式使用前請到 `Hosts` 分頁修改帳號密碼。
+
+### 4. 部署 Web App
+
+1. Apps Script 右上角點「部署」→「新增部署作業」。
+2. 類型選擇「網頁應用程式」。
+3. 執行身分選「我」。
+4. 存取權限選「任何人」。
+5. 點「部署」。
+6. 複製產生的 Web App URL，通常長得像：
+
+```text
+https://script.google.com/macros/s/AKfycb.../exec
+```
+
+### 5. 填入前端 URL
+
+打開 `index.html` 與 `admin.html`，找到：
+
+```js
+const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+```
+
+把字串換成你的 Web App URL。
+
+兩個檔案都要改。
+
+### 6. 部署網站
+
+可以使用 GitHub Pages 或任何靜態網站空間。
+
+至少需要上傳：
+
+- `index.html`
+- `admin.html`
+- `adim.html`
+
+## 業務規則
+
+- 阿瓦隆：5 ~ 10 人，每人 7 萬金幣，可獲得藍寶石；5 顆可兌換免費場。
+- 阿瓦隆2：5 ~ 10 人，每人 9 萬金幣，可獲得紅寶石；5 顆可兌換免費場。
+- 璀璨寶石：2 ~ 4 人，每人 5 萬金幣。
+- TRPG：1 ~ 6 人，每人 10 萬金幣。
+- 寶石點數由店家在遊戲內人工紀錄；網站只負責預約時標記「使用寶石兌換」。
+
+## 後端防呆
+
+- 同一主持人、同一日期、同一時段不能重複開團。
+- 併桌加入時會重新檢查人數上限。
+- 滿團時自動改為 `已滿團`。
+- 若客人手速太慢，後端會回傳：`此團已滿，手速太慢囉！`
+
+## 安全提醒
+
+目前主持人密碼為明文存放在試算表，適合小型內部使用。若要正式公開營運，建議改成雜湊密碼、管理 token，或改用 Google 帳號授權。

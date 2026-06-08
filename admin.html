@@ -3,764 +3,462 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>主持人後台 ─ 光之意志桌遊酒館</title>
+  <title>主持人後台 - 光之意志桌遊酒館</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --gold: #c9a84c;
       --gold-light: #f0d080;
       --gold-dark: #8a6a1e;
-      --bg-deep: #0d0d14;
-      --bg-card: #16161f;
-      --bg-panel: #1e1e2e;
-      --border-gold: rgba(201,168,76,0.35);
-      --text-main: #e8dfc8;
-      --text-muted: #8a8070;
+      --bg-deep: #080812;
+      --bg-card: #151521;
+      --text-main: #efe4c8;
+      --text-muted: #968a76;
+      --border-gold: rgba(201, 168, 76, 0.3);
     }
     * { box-sizing: border-box; }
     body {
+      margin: 0;
       font-family: 'Noto Serif TC', serif;
-      background-color: var(--bg-deep);
       color: var(--text-main);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(201,168,76,0.10), transparent 28rem),
+        radial-gradient(circle at 80% 25%, rgba(110,70,190,0.16), transparent 32rem),
+        linear-gradient(180deg, #060610 0%, var(--bg-deep) 100%);
       min-height: 100vh;
-      background-image:
-        radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 80%, rgba(80,60,140,0.08) 0%, transparent 60%);
     }
     .font-cinzel { font-family: 'Cinzel', serif; }
     .gold-text { color: var(--gold); }
-    .gold-border { border-color: var(--border-gold); }
-
-    /* 頂部導覽 */
-    .topbar {
-      background: linear-gradient(90deg, #0d0d14 0%, #1a1428 50%, #0d0d14 100%);
-      border-bottom: 1px solid var(--border-gold);
-      box-shadow: 0 2px 20px rgba(201,168,76,0.1);
-    }
-    .topbar-title {
-      font-family: 'Cinzel', serif;
-      background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* 登入卡片 */
-    .login-card {
-      background: var(--bg-card);
+    .glass {
+      background: rgba(21,21,33,.88);
       border: 1px solid var(--border-gold);
-      border-radius: 16px;
-      box-shadow:
-        0 0 40px rgba(201,168,76,0.08),
-        0 0 80px rgba(80,60,140,0.06),
-        inset 0 1px 0 rgba(201,168,76,0.15);
+      box-shadow: 0 20px 70px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.04);
+      backdrop-filter: blur(12px);
     }
-    .login-card::before {
-      content: '';
-      display: block;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-      border-radius: 16px 16px 0 0;
-    }
-
-    /* 輸入框 */
-    .ff-input {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(201,168,76,0.25);
-      border-radius: 8px;
-      color: var(--text-main);
-      padding: 10px 14px;
+    .field {
       width: 100%;
-      transition: all 0.2s;
-      font-family: 'Noto Serif TC', serif;
-    }
-    .ff-input:focus {
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(201,168,76,.24);
+      border-radius: .85rem;
+      color: var(--text-main);
+      padding: .85rem 1rem;
       outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
-      background: rgba(255,255,255,0.06);
     }
-    .ff-input::placeholder { color: var(--text-muted); }
-
-    /* 按鈕 */
+    .field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.13); }
+    .field option { background: #151521; color: var(--text-main); }
     .btn-gold {
-      background: linear-gradient(135deg, #c9a84c, #8a6a1e);
-      color: #0d0d14;
-      font-family: 'Cinzel', serif;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      padding: 11px 28px;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.05em;
-      box-shadow: 0 2px 12px rgba(201,168,76,0.25);
+      background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+      color: #0b0b12;
+      font-weight: 900;
+      border-radius: 999px;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 8px 24px rgba(201,168,76,.2);
     }
-    .btn-gold:hover {
-      background: linear-gradient(135deg, #f0d080, #c9a84c);
-      box-shadow: 0 4px 20px rgba(201,168,76,0.4);
-      transform: translateY(-1px);
-    }
-    .btn-gold:active { transform: translateY(0); }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 12px 34px rgba(201,168,76,.34); }
     .btn-ghost {
-      background: transparent;
-      color: var(--gold);
-      border: 1px solid var(--border-gold);
-      border-radius: 8px;
-      padding: 8px 18px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: 'Noto Serif TC', serif;
-      font-size: 0.85rem;
-    }
-    .btn-ghost:hover {
-      background: rgba(201,168,76,0.1);
-      border-color: var(--gold);
+      border: 1px solid rgba(201,168,76,.35);
+      color: var(--gold-light);
+      border-radius: 999px;
     }
     .btn-danger {
-      background: linear-gradient(135deg, #8b2020, #5a1010);
-      color: #f0d0d0;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.8rem;
+      border: 1px solid rgba(240,100,100,.4);
+      color: #ffb0b0;
+      background: rgba(180,40,40,.12);
+      border-radius: 999px;
     }
-    .btn-danger:hover { background: linear-gradient(135deg, #b02828, #7a1818); }
-
-    /* 面板 */
-    .panel {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-gold);
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-    .panel-header {
-      background: linear-gradient(90deg, rgba(201,168,76,0.12), transparent);
-      border-bottom: 1px solid var(--border-gold);
-      border-radius: 12px 12px 0 0;
-      padding: 14px 20px;
-    }
-
-    /* 標籤 */
     .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .badge-open { background: rgba(80,200,120,0.15); color: #50c878; border: 1px solid rgba(80,200,120,0.3); }
-    .badge-full { background: rgba(200,80,80,0.15); color: #e05050; border: 1px solid rgba(200,80,80,0.3); }
-    .badge-gem  { background: rgba(120,80,200,0.15); color: #a070e0; border: 1px solid rgba(120,80,200,0.3); }
-    .badge-ended{ background: rgba(120,120,120,0.15); color: #888; border: 1px solid rgba(120,120,120,0.3); }
-
-    /* 裝飾分隔線 */
-    .divider-gold {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-      margin: 20px 0;
-      opacity: 0.4;
-    }
-
-    /* 場次卡片 */
-    .shift-row {
-      border-bottom: 1px solid rgba(201,168,76,0.1);
-      transition: background 0.15s;
-    }
-    .shift-row:last-child { border-bottom: none; }
-    .shift-row:hover { background: rgba(201,168,76,0.04); }
-
-    /* 通知 Toast */
-    #toast {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      z-index: 9999;
-      min-width: 260px;
-      max-width: 400px;
-      padding: 14px 20px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      transform: translateY(20px);
-      opacity: 0;
-      transition: all 0.3s ease;
-      pointer-events: none;
-    }
-    #toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    #toast.success {
-      background: rgba(20, 40, 25, 0.95);
-      border: 1px solid rgba(80,200,120,0.5);
-      color: #80e0a0;
-    }
-    #toast.error {
-      background: rgba(40, 15, 15, 0.95);
-      border: 1px solid rgba(200,80,80,0.5);
-      color: #e08080;
-    }
-
-    /* 選擇框 */
-    .ff-select {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(201,168,76,0.25);
-      border-radius: 8px;
-      color: var(--text-main);
-      padding: 10px 14px;
-      width: 100%;
-      cursor: pointer;
-      font-family: 'Noto Serif TC', serif;
-      transition: all 0.2s;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' fill='none' stroke-linecap='round'%3E%3C/path%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 36px;
-    }
-    .ff-select:focus {
-      outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
-    }
-    .ff-select option { background: #1e1e2e; color: var(--text-main); }
-
-    /* 統計卡 */
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-gold);
-      border-radius: 10px;
-      padding: 16px 20px;
-      text-align: center;
-    }
-    .stat-number {
-      font-family: 'Cinzel', serif;
-      font-size: 2rem;
-      color: var(--gold);
-      line-height: 1;
-    }
-
-    /* 載入動畫 */
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(201,168,76,0.3);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* 裝飾符文 */
-    .rune-deco {
-      font-size: 1.5rem;
-      opacity: 0.15;
-      user-select: none;
-    }
-
-    /* 滾動條 */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg-deep); }
-    ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
-
-    /* 響應式 */
-    @media (max-width: 640px) {
-      .topbar-title { font-size: 1rem; }
-    }
-
-    /* 遊戲選擇 */
-    .game-checkbox-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-    }
-    .game-checkbox-label {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(201,168,76,0.2);
-      border-radius: 6px;
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .game-checkbox-label:hover { border-color: var(--gold); background: rgba(255,255,255,0.08); }
-    .game-checkbox-label input:checked + span {
-      color: var(--gold);
-      font-weight: 600;
-    }
-    .game-checkbox-label input:checked {
-      accent-color: var(--gold);
-    }
-
-    /* 連線狀態指示燈 */
-    .status-indicator {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      border: 1px solid rgba(201,168,76,.26);
+      padding: .25rem .75rem;
+      font-size: .75rem;
+      color: var(--gold-light);
+      background: rgba(201,168,76,.08);
     }
-    .status-dot-inner { width: 8px; height: 8px; border-radius: 50%; }
-    .status-online { color: #50c878; border-color: rgba(80,200,120,0.3); }
-    .status-online .status-dot-inner { background: #50c878; box-shadow: 0 0 8px #50c878; }
-    .status-offline { color: #e05050; border-color: rgba(224,80,80,0.3); }
-    .status-offline .status-dot-inner { background: #e05050; box-shadow: 0 0 8px #e05050; }
-    .status-checking { color: #c9a84c; border-color: rgba(201,168,76,0.3); }
-    .status-checking .status-dot-inner { background: #c9a84c; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+    .badge-green { color: #78e6a2; border-color: rgba(120,230,162,.35); background: rgba(120,230,162,.1); }
+    .badge-red { color: #f08a8a; border-color: rgba(240,138,138,.35); background: rgba(240,138,138,.1); }
+    .badge-purple { color: #c6a0ff; border-color: rgba(198,160,255,.35); background: rgba(198,160,255,.1); }
+    .spinner {
+      width: 22px; height: 22px; border: 3px solid rgba(201,168,76,.25);
+      border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-
-<!-- ══════════════ 頂部導覽列 ══════════════ -->
-<nav class="topbar sticky top-0 z-50">
-  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <span class="text-2xl">⚔️</span>
+  <nav class="sticky top-0 z-50 bg-[#080812]/85 border-b border-[rgba(201,168,76,0.18)] backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div>
-        <div class="topbar-title font-cinzel text-lg font-bold leading-tight">光之意志桌遊酒館</div>
-        <div class="text-xs" style="color:var(--text-muted)">主持人管理後台</div>
+        <a href="index.html" class="font-cinzel tracking-[0.24em] font-black gold-text">WILL OF LIGHT</a>
+        <p class="text-xs text-[var(--text-muted)]">主持人管理後台</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="connectionStatus" class="badge">未連線</span>
+        <span id="hostLabel" class="hidden text-sm text-[var(--text-muted)]"></span>
+        <button id="logoutBtn" class="btn-ghost px-4 py-2 hidden" onclick="logout()">登出</button>
       </div>
     </div>
+  </nav>
 
-    <div class="flex items-center gap-4">
-      <!-- 連線狀態指示 -->
-      <div id="connectionStatus" class="status-indicator status-checking">
-        <div class="status-dot-inner"></div>
-        <span id="statusText">連線檢查中...</span>
+  <main class="max-w-7xl mx-auto px-4 py-10">
+    <section id="loginSection" class="min-h-[70vh] flex items-center justify-center">
+      <div class="glass rounded-3xl p-8 md:p-10 w-full max-w-md">
+        <p class="font-cinzel tracking-[0.35em] text-sm gold-text text-center">HOST LOGIN</p>
+        <h1 class="text-3xl font-black text-center mt-3 mb-8">主持人登入</h1>
+        <form id="loginForm" class="grid gap-5">
+          <label class="grid gap-2">
+            <span class="text-sm gold-text font-bold">帳號</span>
+            <input id="username" class="field" autocomplete="username" required>
+          </label>
+          <label class="grid gap-2">
+            <span class="text-sm gold-text font-bold">密碼</span>
+            <input id="password" class="field" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="loginBtn" class="btn-gold px-8 py-4">登入後台</button>
+          <p id="loginError" class="hidden rounded-2xl border border-red-400/30 bg-red-500/10 text-red-200 p-4 text-sm"></p>
+        </form>
       </div>
+    </section>
 
-      <div id="hostInfo" class="hidden items-center gap-3">
-        <div class="text-sm" style="color:var(--text-muted)">
-          目前登入：<span id="hostName" class="gold-text font-semibold"></span>
+    <section id="adminSection" class="hidden">
+      <div class="grid md:grid-cols-4 gap-4 mb-8">
+        <div class="glass rounded-3xl p-5 text-center">
+          <p id="statTotal" class="font-cinzel text-4xl gold-text">0</p>
+          <p class="text-xs text-[var(--text-muted)] mt-1">我的場次</p>
         </div>
-        <button onclick="logout()" class="btn-ghost">登出</button>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- ══════════════ 登入畫面 ══════════════ -->
-<div id="loginSection" class="min-h-screen flex items-center justify-center px-4 py-12">
-  <div class="w-full max-w-md">
-    <div class="text-center mb-8">
-      <div class="rune-deco text-4xl mb-2">✦ ✦ ✦</div>
-      <h1 class="font-cinzel text-3xl font-bold gold-text mb-2">主持人登入</h1>
-      <p class="text-sm" style="color:var(--text-muted)">請輸入您的主持人帳號與密碼</p>
-    </div>
-
-    <div class="login-card p-8">
-      <div class="space-y-5">
-        <div>
-          <label class="block text-sm gold-text mb-2 font-semibold">帳號</label>
-          <input id="loginUser" type="text" class="ff-input" placeholder="請輸入帳號" autocomplete="username" />
+        <div class="glass rounded-3xl p-5 text-center">
+          <p id="statOpen" class="font-cinzel text-4xl text-green-300">0</p>
+          <p class="text-xs text-[var(--text-muted)] mt-1">開放中</p>
         </div>
-        <div>
-          <label class="block text-sm gold-text mb-2 font-semibold">密碼</label>
-          <div class="relative">
-            <input id="loginPass" type="password" class="ff-input" placeholder="請輸入密碼" autocomplete="current-password" />
-            <button type="button" onclick="togglePass()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style="color:var(--text-muted)">顯示</button>
-          </div>
+        <div class="glass rounded-3xl p-5 text-center">
+          <p id="statFull" class="font-cinzel text-4xl text-red-300">0</p>
+          <p class="text-xs text-[var(--text-muted)] mt-1">已滿團</p>
         </div>
-        <div id="loginError" class="hidden text-sm text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg px-4 py-2"></div>
-        <button onclick="doLogin()" class="btn-gold w-full text-center mt-2" id="loginBtn">
-          <span id="loginBtnText">進入後台</span>
-        </button>
+        <div class="glass rounded-3xl p-5 text-center">
+          <p id="statPlayers" class="font-cinzel text-4xl text-purple-300">0</p>
+          <p class="text-xs text-[var(--text-muted)] mt-1">預約人數</p>
+        </div>
       </div>
-      <div class="divider-gold"></div>
-      <p class="text-xs text-center" style="color:var(--text-muted)">尚未設定帳號？請聯絡店長在試算表中新增主持人帳號。</p>
-    </div>
-  </div>
-</div>
 
-<!-- ══════════════ 主後台畫面 ══════════════ -->
-<div id="adminSection" class="hidden max-w-6xl mx-auto px-4 py-8">
-  <!-- 統計概覽 -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    <div class="stat-card">
-      <div class="stat-number" id="statTotal">0</div>
-      <div class="text-xs mt-1" style="color:var(--text-muted)">我的總班次</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number text-green-400" id="statOpen">0</div>
-      <div class="text-xs mt-1" style="color:var(--text-muted)">開放中</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number text-red-400" id="statEnded">0</div>
-      <div class="text-xs mt-1" style="color:var(--text-muted)">已結束</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number" style="color:#a070e0" id="statBooked">0</div>
-      <div class="text-xs mt-1" style="color:var(--text-muted)">預約數</div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- 左欄：發布新班次 -->
-    <div class="lg:col-span-1">
-      <div class="panel">
-        <div class="panel-header"><h2 class="font-cinzel font-bold gold-text flex items-center gap-2"><span>✦</span> 發布新班次</h2></div>
-        <div class="p-5 space-y-4">
-          <div>
-            <label class="block text-sm gold-text mb-1.5 font-semibold">日期</label>
-            <input id="newDate" type="date" class="ff-input" />
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-sm gold-text mb-1.5 font-semibold">開始時間</label>
-              <select id="newStartTime" class="ff-select"></select>
+      <div class="grid lg:grid-cols-[420px_1fr] gap-6">
+        <section class="glass rounded-3xl p-6 md:p-8">
+          <span class="badge mb-5">CREATE SLOT</span>
+          <h2 class="text-3xl font-black gold-text mb-6">釋出時段</h2>
+          <form id="slotForm" class="grid gap-5">
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">日期</span>
+              <input id="slotDate" class="field" type="date" required>
+            </label>
+            <div class="grid grid-cols-2 gap-4">
+              <label class="grid gap-2">
+                <span class="text-sm gold-text font-bold">開始</span>
+                <select id="startTime" class="field" required></select>
+              </label>
+              <label class="grid gap-2">
+                <span class="text-sm gold-text font-bold">結束</span>
+                <select id="endTime" class="field" required></select>
+              </label>
             </div>
+            <label class="grid gap-2">
+              <span class="text-sm gold-text font-bold">今天想帶的遊戲</span>
+              <select id="game" class="field" required>
+                <option value="阿瓦隆">阿瓦隆</option>
+                <option value="阿瓦隆2">阿瓦隆2</option>
+                <option value="璀璨寶石">璀璨寶石</option>
+                <option value="TRPG">TRPG</option>
+              </select>
+            </label>
+            <button id="slotBtn" class="btn-gold px-8 py-4">發布開團</button>
+          </form>
+        </section>
+
+        <section class="glass rounded-3xl p-6 md:p-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-              <label class="block text-sm gold-text mb-1.5 font-semibold">結束時間</label>
-              <select id="newEndTime" class="ff-select"></select>
+              <span class="badge mb-3">MY BOOKINGS</span>
+              <h2 class="text-3xl font-black gold-text">我的場次</h2>
             </div>
+            <button class="btn-ghost px-5 py-3" onclick="loadBookings()">重新整理</button>
           </div>
+          <div id="bookingState" class="rounded-3xl border border-[rgba(201,168,76,0.16)] bg-black/20 p-8 text-center text-[var(--text-muted)]">
+            登入後顯示場次。
+          </div>
+          <div id="bookingList" class="grid gap-4"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+    const STATUS_OPEN = '開放預約中';
+    const STATUS_FULL = '已滿團';
+    const STATUS_GEM = '使用寶石兌換';
+    const STATUS_ENDED = '已結束';
+
+    const state = {
+      host: null,
+      bookings: []
+    };
+
+    const el = {
+      connectionStatus: document.getElementById('connectionStatus'),
+      hostLabel: document.getElementById('hostLabel'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      loginSection: document.getElementById('loginSection'),
+      adminSection: document.getElementById('adminSection'),
+      loginForm: document.getElementById('loginForm'),
+      loginBtn: document.getElementById('loginBtn'),
+      loginError: document.getElementById('loginError'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+      slotForm: document.getElementById('slotForm'),
+      slotDate: document.getElementById('slotDate'),
+      startTime: document.getElementById('startTime'),
+      endTime: document.getElementById('endTime'),
+      game: document.getElementById('game'),
+      slotBtn: document.getElementById('slotBtn'),
+      bookingState: document.getElementById('bookingState'),
+      bookingList: document.getElementById('bookingList')
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      buildTimeOptions();
+      const today = new Date().toISOString().slice(0, 10);
+      el.slotDate.value = today;
+      el.slotDate.min = today;
+      el.loginForm.addEventListener('submit', login);
+      el.slotForm.addEventListener('submit', createSlot);
+      restoreSession();
+      checkConnection();
+    });
+
+    function isApiConfigured() {
+      return GAS_API_URL && !GAS_API_URL.includes('PASTE_YOUR_GAS_WEB_APP_URL_HERE');
+    }
+
+    function buildTimeOptions() {
+      const options = ['<option value="">選擇</option>'];
+      for (let h = 0; h < 24; h += 1) {
+        for (let m = 0; m < 60; m += 30) {
+          const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          options.push(`<option value="${time}">${time}</option>`);
+        }
+      }
+      el.startTime.innerHTML = options.join('');
+      el.endTime.innerHTML = options.join('');
+      el.startTime.value = '18:00';
+      el.endTime.value = '22:00';
+    }
+
+    async function checkConnection() {
+      if (!isApiConfigured()) {
+        setConnection(false, '尚未設定 GAS URL');
+        return;
+      }
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=listBookings&t=${Date.now()}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+        setConnection(true, '系統連線正常');
+      } catch (error) {
+        setConnection(false, '系統連線異常');
+      }
+    }
+
+    function setConnection(ok, text) {
+      el.connectionStatus.className = ok ? 'badge badge-green' : 'badge badge-red';
+      el.connectionStatus.textContent = text;
+    }
+
+    function restoreSession() {
+      try {
+        const saved = sessionStorage.getItem('ff14Host');
+        if (saved) {
+          state.host = JSON.parse(saved);
+          showAdmin();
+          loadBookings();
+        }
+      } catch (error) {
+        sessionStorage.removeItem('ff14Host');
+      }
+    }
+
+    async function login(event) {
+      event.preventDefault();
+      if (!isApiConfigured()) return showLoginError('請先設定 GAS_API_URL。');
+      setBusy(el.loginBtn, true, '登入中...');
+      hideLoginError();
+      try {
+        const data = await postAction({
+          action: 'login',
+          username: el.username.value.trim(),
+          password: el.password.value
+        });
+        state.host = data.host;
+        sessionStorage.setItem('ff14Host', JSON.stringify(state.host));
+        showAdmin();
+        await loadBookings();
+      } catch (error) {
+        showLoginError(error.message || '登入失敗。');
+      } finally {
+        setBusy(el.loginBtn, false, '登入後台');
+      }
+    }
+
+    function showAdmin() {
+      el.loginSection.classList.add('hidden');
+      el.adminSection.classList.remove('hidden');
+      el.hostLabel.classList.remove('hidden');
+      el.logoutBtn.classList.remove('hidden');
+      el.hostLabel.textContent = `目前登入：${state.host.displayName}`;
+    }
+
+    function logout() {
+      state.host = null;
+      state.bookings = [];
+      sessionStorage.removeItem('ff14Host');
+      el.loginSection.classList.remove('hidden');
+      el.adminSection.classList.add('hidden');
+      el.hostLabel.classList.add('hidden');
+      el.logoutBtn.classList.add('hidden');
+    }
+
+    async function createSlot(event) {
+      event.preventDefault();
+      if (!state.host) return alert('請先登入。');
+      if (el.startTime.value >= el.endTime.value) return alert('結束時間必須晚於開始時間。');
+
+      setBusy(el.slotBtn, true, '發布中...');
+      try {
+        const data = await postAction({
+          action: 'createSlot',
+          host: state.host,
+          date: el.slotDate.value,
+          startTime: el.startTime.value,
+          endTime: el.endTime.value,
+          game: el.game.value
+        });
+        alert(data.message || '時段已發布。');
+        await loadBookings();
+      } catch (error) {
+        alert(error.message || '發布失敗。');
+      } finally {
+        setBusy(el.slotBtn, false, '發布開團');
+      }
+    }
+
+    async function loadBookings() {
+      if (!state.host) return;
+      el.bookingState.hidden = false;
+      el.bookingState.innerHTML = '<div class="spinner mx-auto mb-4"></div>正在載入場次...';
+      el.bookingList.innerHTML = '';
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=listBookings&t=${Date.now()}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || '讀取失敗');
+        state.bookings = (data.bookings || []).filter((booking) => booking.hostUsername === state.host.username);
+        renderStats();
+        renderBookings();
+      } catch (error) {
+        el.bookingState.innerHTML = escapeHtml(error.message || '讀取失敗。');
+      }
+    }
+
+    function renderStats() {
+      document.getElementById('statTotal').textContent = state.bookings.length;
+      document.getElementById('statOpen').textContent = state.bookings.filter((b) => b.status === STATUS_OPEN).length;
+      document.getElementById('statFull').textContent = state.bookings.filter((b) => b.status === STATUS_FULL || b.status === STATUS_GEM).length;
+      document.getElementById('statPlayers').textContent = state.bookings.reduce((sum, b) => sum + Number(b.currentPlayers || 0), 0);
+    }
+
+    function renderBookings() {
+      if (!state.bookings.length) {
+        el.bookingState.hidden = false;
+        el.bookingState.textContent = '目前沒有場次。';
+        return;
+      }
+      el.bookingState.hidden = true;
+      el.bookingList.innerHTML = '';
+      state.bookings
+        .slice()
+        .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))
+        .forEach((booking) => el.bookingList.appendChild(createBookingRow(booking)));
+    }
+
+    function createBookingRow(booking) {
+      const row = document.createElement('article');
+      row.className = 'rounded-3xl border border-[rgba(201,168,76,0.18)] bg-black/20 p-5';
+      row.innerHTML = `
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
-            <label class="block text-sm gold-text mb-2 font-semibold">提供遊戲 (複選)</label>
-            <div id="gamesOfferedCheckboxes" class="game-checkbox-group"></div>
+            <p class="text-sm text-[var(--text-muted)]">${escapeHtml(booking.date)} / ${escapeHtml(booking.startTime)} - ${escapeHtml(booking.endTime)}</p>
+            <h3 class="text-2xl font-black gold-text mt-1">${escapeHtml(booking.game)}</h3>
+            <p class="text-sm text-[var(--text-muted)] mt-1">模式：${escapeHtml(booking.mode)} / 人數：${Number(booking.currentPlayers)}/${Number(booking.maxPlayers)}</p>
+            <p class="text-sm text-[var(--text-muted)] mt-1">費用：${Number(booking.totalFeeWan || 0)} 萬金幣</p>
           </div>
-          <button id="publishBtn" onclick="publishShift()" class="btn-gold w-full mt-2"><span id="publishBtnText">✦ 發布班次</span></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 右欄：班次列表 -->
-    <div class="lg:col-span-2 space-y-6">
-      <div class="panel">
-        <div class="panel-header flex justify-between items-center">
-          <h2 class="font-cinzel font-bold gold-text flex items-center gap-2"><span>✦</span> 我的班次列表</h2>
-          <button onclick="loadMyShifts()" class="text-xs hover:text-gold transition" style="color:var(--text-muted)">🔄 重新整理</button>
-        </div>
-        <div id="shiftListLoading" class="p-12 text-center hidden"><div class="spinner mb-4"></div><p class="text-sm" style="color:var(--text-muted)">正在載入班次...</p></div>
-        <div id="shiftListEmpty" class="p-12 text-center hidden"><p class="text-sm" style="color:var(--text-muted)">目前尚無班次紀錄</p></div>
-        <div id="shiftList" class="divide-y divide-gold/10"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header"><h2 class="font-cinzel font-bold gold-text flex items-center gap-2"><span>✦</span> 全店班次概覽</h2></div>
-        <div id="allShiftListLoading" class="p-12 text-center hidden"><div class="spinner mb-4"></div></div>
-        <div id="allShiftListEmpty" class="p-12 text-center hidden"><p class="text-sm" style="color:var(--text-muted)">目前全店尚無班次</p></div>
-        <div id="allShiftList" class="divide-y divide-gold/10 max-h-80 overflow-y-auto"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-// ══════════════ 配置與變數 ══════════════
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxhuKNH6-OEBH6csgZOseaZU20dxI-DuYm4ecxPiLekBlyHpOmnYTgsC0bZuIQRYAXxRQ/exec';
-const ALL_GAMES = ['阿瓦隆', '璀璨寶石', '阿瓦隆 2', '其他桌遊'];
-let currentHost = null;
-
-// ══════════════ 初始化 ══════════════
-document.addEventListener('DOMContentLoaded', () => {
-  const savedSession = sessionStorage.getItem('hostSession');
-  if (savedSession) {
-    currentHost = JSON.parse(savedSession);
-    showAdminPanel();
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('newDate').value = today;
-  document.getElementById('newDate').min = today;
-
-  generateTimeOptions();
-  generateGameCheckboxes();
-  checkConnection();
-});
-
-// ── 連線檢查 ──
-async function checkConnection() {
-  const indicator = document.getElementById('connectionStatus');
-  const statusText = document.getElementById('statusText');
-
-  try {
-    const res = await fetch(`${GAS_API_URL}?action=getShifts`);
-    if (res.ok) {
-      indicator.className = 'status-indicator status-online';
-      statusText.textContent = '系統連線正常';
-    } else {
-      throw new Error();
-    }
-  } catch (e) {
-    indicator.className = 'status-indicator status-offline';
-    statusText.textContent = '系統連線異常';
-  }
-}
-
-function generateTimeOptions() {
-  const startTimeSelect = document.getElementById('newStartTime');
-  const endTimeSelect = document.getElementById('newEndTime');
-  startTimeSelect.innerHTML = '<option value="">開始時間</option>';
-  endTimeSelect.innerHTML = '<option value="">結束時間</option>';
-  for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      const option = `<option value="${time}">${time}</option>`;
-      startTimeSelect.innerHTML += option;
-      endTimeSelect.innerHTML += option;
-    }
-  }
-  startTimeSelect.value = '18:00';
-  endTimeSelect.value = '22:00';
-}
-
-function generateGameCheckboxes() {
-  const container = document.getElementById('gamesOfferedCheckboxes');
-  container.innerHTML = '';
-  ALL_GAMES.forEach(game => {
-    container.innerHTML += `<label class="game-checkbox-label"><input type="checkbox" name="gamesOffered" value="${game}" /><span>${game}</span></label>`;
-  });
-}
-
-function togglePass() {
-  const p = document.getElementById('loginPass');
-  p.type = p.type === 'password' ? 'text' : 'password';
-}
-
-async function doLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value;
-  const errBox = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
-  const btnText = document.getElementById('loginBtnText');
-
-  if (!username || !password) { errBox.textContent = '請輸入帳號與密碼'; errBox.classList.remove('hidden'); return; }
-
-  btn.disabled = true;
-  btnText.innerHTML = '<span class="spinner"></span>';
-  errBox.classList.add('hidden');
-
-  try {
-    const res = await fetch(GAS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'login', username, password })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      currentHost = {
-        username,
-        displayName: data.displayName,
-        gamesOffered: data.games
-      };
-
-      sessionStorage.setItem('hostSession', JSON.stringify(currentHost));
-      showAdminPanel();
-    } else {
-      errBox.textContent = data.message || '帳號或密碼錯誤';
-      errBox.classList.remove('hidden');
-    }
-  } catch (err) {
-    errBox.textContent = '連線失敗，請確認 GAS 部署是否正確。';
-    errBox.classList.remove('hidden');
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = '進入後台';
-  }
-}
-
-function logout() {
-  sessionStorage.removeItem('hostSession');
-  currentHost = null;
-  document.getElementById('loginSection').classList.remove('hidden');
-  document.getElementById('adminSection').classList.add('hidden');
-  document.getElementById('hostInfo').classList.add('hidden');
-  document.getElementById('hostInfo').classList.remove('flex');
-}
-
-function showAdminPanel() {
-  document.getElementById('loginSection').classList.add('hidden');
-  document.getElementById('adminSection').classList.remove('hidden');
-  document.getElementById('hostInfo').classList.remove('hidden');
-  document.getElementById('hostInfo').classList.add('flex');
-  document.getElementById('hostName').textContent = currentHost.displayName;
-  loadMyShifts();
-  loadAllShifts();
-}
-
-async function publishShift() {
-  const date = document.getElementById('newDate').value;
-  const startTime = document.getElementById('newStartTime').value;
-  const endTime = document.getElementById('newEndTime').value;
-  const selectedGames = Array.from(document.querySelectorAll('input[name="gamesOffered"]:checked')).map(cb => cb.value);
-
-  if (!date || !startTime || !endTime || selectedGames.length === 0) {
-    showToast('請填寫完整資訊並選擇遊戲', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('publishBtn');
-  const btnText = document.getElementById('publishBtnText');
-  btn.disabled = true;
-  btnText.innerHTML = '<span class="spinner"></span> 發布中...';
-
-  try {
-    const res = await fetch(GAS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'addShift',
-        date, startTime, endTime,
-        host: currentHost.displayName,
-        gamesOffered: selectedGames
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      showToast('✦ 班次發布成功！', 'success');
-      loadMyShifts();
-      loadAllShifts();
-    } else {
-      showToast(data.message || '發布失敗', 'error');
-    }
-  } catch (err) {
-    showToast('連線失敗', 'error');
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = '✦ 發布班次';
-  }
-}
-
-async function loadMyShifts() {
-  const loading = document.getElementById('shiftListLoading');
-  const empty = document.getElementById('shiftListEmpty');
-  const list = document.getElementById('shiftList');
-
-  loading.classList.remove('hidden');
-  empty.classList.add('hidden');
-  list.classList.add('hidden');
-
-  try {
-    const res = await fetch(`${GAS_API_URL}?action=getShifts`);
-    const data = await res.json();
-    if (!data.success) throw new Error();
-
-    const mine = data.data.filter(s => s.host === currentHost.displayName);
-    updateStats(mine);
-    loading.classList.add('hidden');
-
-    if (mine.length === 0) {
-      empty.classList.remove('hidden');
-      return;
-    }
-
-    list.innerHTML = mine.map(s => renderShiftRow(s, true)).join('');
-    list.classList.remove('hidden');
-  } catch {
-    loading.classList.add('hidden');
-    empty.classList.remove('hidden');
-  }
-}
-
-async function loadAllShifts() {
-  const loading = document.getElementById('allShiftListLoading');
-  const empty = document.getElementById('allShiftListEmpty');
-  const list = document.getElementById('allShiftList');
-
-  loading.classList.remove('hidden');
-  empty.classList.add('hidden');
-  list.classList.add('hidden');
-
-  try {
-    const res = await fetch(`${GAS_API_URL}?action=getShifts`);
-    const data = await res.json();
-    if (!data.success) throw new Error();
-
-    loading.classList.add('hidden');
-    if (data.data.length === 0) {
-      empty.classList.remove('hidden');
-      return;
-    }
-    list.innerHTML = data.data.map(s => renderShiftRow(s, false)).join('');
-    list.classList.remove('hidden');
-  } catch {
-    loading.classList.add('hidden');
-    empty.classList.remove('hidden');
-  }
-}
-
-function updateStats(shifts) {
-  document.getElementById('statTotal').textContent = shifts.length;
-  document.getElementById('statOpen').textContent = shifts.filter(s => s.status === '開放中').length;
-  document.getElementById('statEnded').textContent = shifts.filter(s => s.status === '已結束').length;
-  let totalBookingsCount = 0;
-  shifts.forEach(shift => { totalBookingsCount += shift.bookings.length; });
-  document.getElementById('statBooked').textContent = totalBookingsCount;
-}
-
-function renderShiftRow(s, showActions) {
-  const badgeCls = s.status === '已結束' ? 'badge-ended' : 'badge-open';
-  return `
-    <div class="shift-row px-5 py-4">
-      <div class="flex items-start justify-between gap-3 flex-wrap">
-        <div class="flex items-center gap-3 flex-wrap">
-          <span class="text-xl">📅</span>
-          <div>
-            <div class="font-semibold text-sm">${s.date} ${s.startTime} - ${s.endTime}</div>
-            <div class="text-xs mt-0.5" style="color:var(--text-muted)">主持人：${s.host} | 遊戲：${s.gamesOffered.join(' / ')}</div>
-            <div class="text-xs mt-0.5" style="color:var(--text-muted)">預約數：${s.bookings.length}</div>
+          <div class="flex flex-wrap items-center gap-3">
+            ${statusBadge(booking.status)}
+            ${booking.status !== STATUS_ENDED ? '<button class="end-action btn-danger px-4 py-2">結束場次</button>' : ''}
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="badge ${badgeCls}">${s.status}</span>
-          ${showActions && s.status === '開放中' ? `<button onclick="endShift('${s.shiftId}')" class="btn-danger">結束班次</button>` : ''}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-async function endShift(shiftId) {
-  if (!confirm('確定要結束此班次嗎？')) return;
-  try {
-    const res = await fetch(GAS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'endShift', shiftId })
-    });
-    const data = await res.json();
-    if (data.success) {
-      showToast('班次已結束', 'success');
-      loadMyShifts();
-      loadAllShifts();
-    } else {
-      showToast(data.message || '操作失敗', 'error');
+      `;
+      row.querySelector('.end-action')?.addEventListener('click', () => endBooking(booking.bookingId));
+      return row;
     }
-  } catch {
-    showToast('連線失敗', 'error');
-  }
-}
 
-let toastTimer = null;
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `show ${type}`;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
-}
+    function statusBadge(status) {
+      if (status === STATUS_OPEN) return '<span class="badge badge-green">開放中</span>';
+      if (status === STATUS_FULL) return '<span class="badge badge-red">已滿團</span>';
+      if (status === STATUS_GEM) return '<span class="badge badge-purple">寶石兌換</span>';
+      if (status === STATUS_ENDED) return '<span class="badge">已結束</span>';
+      return `<span class="badge">${escapeHtml(status || '未知')}</span>`;
+    }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !document.getElementById('loginSection').classList.contains('hidden')) {
-    doLogin();
-  }
-});
-</script>
+    async function endBooking(bookingId) {
+      if (!confirm('確定要結束此場次嗎？')) return;
+      try {
+        const data = await postAction({ action: 'endBooking', bookingId });
+        alert(data.message || '場次已結束。');
+        await loadBookings();
+      } catch (error) {
+        alert(error.message || '操作失敗。');
+      }
+    }
+
+    async function postAction(payload) {
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || '操作失敗');
+      return data;
+    }
+
+    function showLoginError(message) {
+      el.loginError.textContent = message;
+      el.loginError.classList.remove('hidden');
+    }
+
+    function hideLoginError() {
+      el.loginError.classList.add('hidden');
+    }
+
+    function setBusy(button, busy, text) {
+      button.disabled = busy;
+      button.textContent = text;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[char]));
+    }
+  </script>
 </body>
 </html>
