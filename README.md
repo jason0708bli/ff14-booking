@@ -173,17 +173,15 @@ setupSheets
 https://script.google.com/macros/s/AKfycb.../exec
 ```
 
-### 5. 填入前端 URL
+### 5. 確認前端 URL
 
-打開 `index.html` 與 `admin.html`，找到：
+目前 `index.html` 與 `admin.html` 已填入以下 Web App URL：
 
 ```js
-const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxhuKNH6-OEBH6csgZOseaZU20dxI-DuYm4ecxPiLekBlyHpOmnYTgsC0bZuIQRYAXxRQ/exec';
 ```
 
-把字串換成你的 Web App URL。
-
-兩個檔案都要改。
+如果你之後重新部署並取得新的 URL，請同時更新 `index.html` 與 `admin.html` 的 `GAS_API_URL`。
 
 ### 6. 部署網站
 

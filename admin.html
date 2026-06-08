@@ -193,7 +193,7 @@
   </main>
 
   <script>
-    const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxhuKNH6-OEBH6csgZOseaZU20dxI-DuYm4ecxPiLekBlyHpOmnYTgsC0bZuIQRYAXxRQ/exec';
     const STATUS_OPEN = '開放預約中';
     const STATUS_FULL = '已滿團';
     const STATUS_GEM = '使用寶石兌換';
@@ -237,7 +237,7 @@
     });
 
     function isApiConfigured() {
-      return GAS_API_URL && !GAS_API_URL.includes('PASTE_YOUR_GAS_WEB_APP_URL_HERE');
+      return GAS_API_URL.startsWith('https://script.google.com/macros/s/');
     }
 
     function buildTimeOptions() {

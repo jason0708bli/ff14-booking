@@ -237,7 +237,7 @@
   </main>
 
   <script>
-    const GAS_API_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxhuKNH6-OEBH6csgZOseaZU20dxI-DuYm4ecxPiLekBlyHpOmnYTgsC0bZuIQRYAXxRQ/exec';
     const MODE_SLOT = '時段釋出';
     const MODE_PRIVATE = '包場/私人團';
     const MODE_OPEN = '開放併桌';
@@ -296,7 +296,7 @@
     }
 
     function isApiConfigured() {
-      return GAS_API_URL && !GAS_API_URL.includes('PASTE_YOUR_GAS_WEB_APP_URL_HERE');
+      return GAS_API_URL.startsWith('https://script.google.com/macros/s/');
     }
 
     async function loadBookings() {
