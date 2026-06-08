@@ -15,11 +15,7 @@ FF14 RP 桌遊店「光之意志」預約網站。專案目前是純靜態前端
 
 前台會呼叫 `config.js` 中的 `window.FF14_BOOKING_API_URL`。新版後台 `admin.html` 目前內含同一個 GAS Web App URL。
 
-GAS 需要設定 Script Property：
-
-| Key | 說明 |
-| --- | --- |
-| `SPREADSHEET_ID` | 存放預約資料的 Google 試算表 ID |
+目前 `gas/Code.gs` 直接在 `getSpreadsheet()` 內設定試算表 ID。
 
 ### 讀取資料
 
@@ -27,12 +23,6 @@ GAS 需要設定 Script Property：
 
 ```text
 GET <API_URL>?action=getShifts&t=<timestamp>
-```
-
-`gas/Code.gs` 也支援 JSONP fallback：
-
-```text
-GET <API_URL>?action=getShifts&callback=<callbackName>&t=<timestamp>
 ```
 
 回傳：
